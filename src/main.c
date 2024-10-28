@@ -41,7 +41,7 @@ main (void)
   memcpy (packet + 34, tcp_init_hdr, plen);
 
   eth_t *e;
-  e = eth_open ("dev");
+  e = eth_open (dev);
   printf ("\n%hu\n", ntohs (e->sll.sll_protocol));
   e->sll.sll_protocol = 0x0800;
   eth_send (e, packet, 58);
