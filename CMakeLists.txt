@@ -4,12 +4,6 @@ project(libkpnet C)
 set(PROJECT_NAME libkpnet)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-find_program(CCACHE_FOUND ccache)
-if (CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif (CCACHE_FOUND)
-
 
 include_directories(
         ${PROJECT_SOURCE_DIR}
