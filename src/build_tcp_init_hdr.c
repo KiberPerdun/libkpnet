@@ -44,7 +44,7 @@ build_tcp_init_hdr (u16 src_port, u16 dst_port, u16 *plen, u16 mss_size, ipv4_t 
           sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
 
   ((tcp_t *)hdr)->check
-      = tcp_checksum ((u16 *)buffer, sizeof (struct pseudo_header) + 24);
+      = tcp_checksum ((u16 *)buffer, sizeof (struct pseudo_header) + sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
   free (buffer);
   free (mss);
 

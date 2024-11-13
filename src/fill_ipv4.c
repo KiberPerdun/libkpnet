@@ -58,9 +58,6 @@ ip_check_add (const void *buf, size_t len, int check)
   return check;
 }
 
-#define ip_check_carry(x)                                                     \
-  (x = (x >> 16) + (x & 0xffff), (~(x + (x >> 16)) & 0xffff))
-
 u16
 in_check (u16 *ptr, int nbytes)
 {
@@ -76,7 +73,7 @@ fill_ipv4 (u32 src, u32 dst)
   hdr->ihl = 5;
   hdr->ver = 4;
   hdr->tos = htons (0x2);
-  hdr->len = htons (44);
+  hdr->len = 0;
   hdr->indent = htons (17091);
   hdr->offset = 0;
   hdr->ttl = 181;
@@ -84,6 +81,5 @@ fill_ipv4 (u32 src, u32 dst)
   hdr->src_addr = src;
   hdr->dest_addr = dst;
   hdr->checksum = 0;
-  hdr->checksum = in_check ((u16 *) hdr, sizeof (ipv4_t));
   return hdr;
 }

@@ -29,11 +29,6 @@ main (u0)
 
   plen += sizeof (ipv4_t);
 
-  /*
-    memcpy (packet, gateway_mac_addres, 6);
-    memcpy (packet + 6, self_mac_addres, 6);
-    memcpy (packet + 12, &ppp, 2);
-    */
   memcpy (packet, mac, 14);
   memcpy (packet + 14, ip_hdr, 20);
 
@@ -42,6 +37,8 @@ main (u0)
     goto cleanup;
 
   memcpy (packet + 34, tcp_init_hdr, sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
+  ((ipv4_t *)(packet + 14))->len = htons( plen - 14);
+  ((ipv4_t *)(packet + 14))->checksum = in_check ((u16 *) (packet + 14), sizeof (ipv4_t));
 
   e = eth_open ("wlan0");
   eth_send (e, packet, plen);
@@ -52,5 +49,4 @@ cleanup:
   free (packet);
   free (ip_hdr);
   free (mac);
-  // free (tcp_init_hdr);
 }
