@@ -3,7 +3,7 @@
 ssize_t
 eth_send (eth_t *eth, u8 *buf, u64 len)
 {
-  if (!eth || !buf || len < sizeof (struct mac_hdr))
+  if (!eth || !buf || len < sizeof (mac_t))
     return -1;
 
   struct mac_hdr *hdr;

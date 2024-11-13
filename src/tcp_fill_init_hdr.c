@@ -14,7 +14,6 @@ struct pseudo_header {
   uint16_t tcp_length;
 };
 
-
 tcp_t *
 tcp_fill_init_hdr (u16 src, u16 dst, u16 flags)
 {

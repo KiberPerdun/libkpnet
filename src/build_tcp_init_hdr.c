@@ -3,27 +3,33 @@
 //
 #include "tcp.h"
 
-void *
+u0 *
 build_tcp_init_hdr (u16 src_port, u16 dst_port, u16 *plen, u16 mss_size, ipv4_t *ip)
 {
-  void *packet;
+  u0 *hdr;
 
-  packet = malloc (sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
+  assert (plen);
+  assert (ip);
+  assert (*plen >= 0);
+
+  if (!(hdr
+        = build_tcp_raw (src_port, dst_port, 2856147168, 0, 0x2, 64240, 0, 4)))
+    return NULL;
+
   *plen += sizeof (tcp_t) + sizeof (tcp_opt_mss_t);
-  tcp_t *tcp = tcp_fill_init_hdr (src_port, dst_port, 0x2);
-  memcpy (packet, tcp, sizeof (tcp_t));
   tcp_opt_mss_t *mss = tcp_fill_opt_mss (mss_size);
-  memcpy (packet + sizeof (tcp_t), mss, sizeof (tcp_opt_mss_t));
+  memcpy (hdr + sizeof (tcp_t), mss, sizeof (tcp_opt_mss_t));
 
-  struct pseudo_header {
+  typedef struct pseudo_header
+  {
     u32 source_address;
     u32 dest_address;
     u8 placeholder;
     u8 protocol;
     u16 tcp_length;
-  };
+  } pseudo_t;
 
-  struct pseudo_header psh;
+  pseudo_t psh;
   psh.source_address = ip->src_addr;
   psh.dest_address = ip->dest_addr;
   psh.placeholder = 0;
@@ -31,13 +37,16 @@ build_tcp_init_hdr (u16 src_port, u16 dst_port, u16 *plen, u16 mss_size, ipv4_t 
 
   psh.tcp_length = htons (sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
 
-  u8 *buffer = malloc (sizeof (struct pseudo_header) + 24);
-  memcpy (buffer, &psh, sizeof (struct pseudo_header));
-  memcpy (buffer + sizeof (struct pseudo_header), packet, sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
+  u8 *buffer
+      = malloc (sizeof (pseudo_t) + sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
+  memcpy (buffer, &psh, sizeof (pseudo_t));
+  memcpy (buffer + sizeof (pseudo_t), hdr,
+          sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
 
-  ((tcp_t *) packet)->check = tcp_checksum ((u16 *) buffer, sizeof (struct pseudo_header) + 24);
+  ((tcp_t *)hdr)->check
+      = tcp_checksum ((u16 *)buffer, sizeof (struct pseudo_header) + 24);
   free (buffer);
   free (mss);
 
-  return packet;
+  return hdr;
 }
