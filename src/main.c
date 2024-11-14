@@ -11,6 +11,7 @@
 #include <string.h>
 #include "tcp.h"
 #include <unistd.h>
+#include "if_packet.h"
 
 i32
 main (u0)
@@ -42,9 +43,22 @@ main (u0)
 
   e = eth_open ("wlan0");
   eth_send (e, packet, plen);
+
+  packet_args_t *args = calloc (1, sizeof (packet_args_t));
+  args->srcport = 12345;
+  args->dstport = 80;
+  args->proto = 0x06;
+  args->plen = 14;
+
+  args->net_layer.ipv4 = *ip_hdr;
+  args->tp_layer.tcp._tcp = *((tcp_t *) tcp_init_hdr);
+
+  recv_filtered (e->fd, if_ipv4_tcp, args);
+
   eth_close (e);
 
 cleanup:
+  free (args);
   free (tcp_init_hdr);
   free (packet);
   free (ip_hdr);

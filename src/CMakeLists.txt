@@ -19,6 +19,11 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         build_tcp_raw.c
         ../include/mac.h
         build_mac_client_raw.c
+        ../include/if_packet.h
+        if_ipv4.c
+        recv_filtered.c
+        if_tcp.c
+        if_ipv4_tcp.c
 )
 
 add_executable(src ${SOURCES})
