@@ -95,6 +95,7 @@ if_tcp (u0 *packet, u64 size, packet_args_t *args)
 
       puts ("Packet end]\n");
       fflush (stdout);
+      return true;
     }
 
   return false;
