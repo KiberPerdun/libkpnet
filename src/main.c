@@ -45,10 +45,12 @@ main (u0)
   eth_send (e, packet, plen);
 
   packet_args_t *args = calloc (1, sizeof (packet_args_t));
+  if (!args)
+    goto cleanup;
+
   args->srcport = 12345;
   args->dstport = 80;
   args->proto = 0x06;
-  args->plen = 14;
 
   args->net_layer.ipv4 = *ip_hdr;
   args->tp_layer.tcp._tcp = *((tcp_t *) tcp_init_hdr);

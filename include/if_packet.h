@@ -45,9 +45,9 @@ typedef struct packet_args
 
 typedef bool (*lrcall_t)(u0 *, u64, packet_args_t *);
 
-u0 recv_filtered (i32 fd, lrcall_t filter, u0* args);
-bool if_ipv4 (u0 *packet, u64 size, packet_args_t *tmp);
-bool if_tcp (u0 *packet, u64 size, packet_args_t *tmp);
-bool if_ipv4_tcp (u0 *packet, u64 size, packet_args_t *tmp);
+u0 recv_filtered (i32 fd, lrcall_t filter, packet_args_t * args);
+bool if_ipv4 (u0 *packet, u64 size, packet_args_t *args);
+bool if_tcp (u0 *packet, u64 size, packet_args_t *args);
+bool if_ipv4_tcp (u0 *packet, u64 size, packet_args_t *args);
 
 #endif // LIBKPNET_IF_PACKET_H

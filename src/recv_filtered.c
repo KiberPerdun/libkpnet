@@ -5,7 +5,7 @@
 #include "if_packet.h"
 
 u0
-recv_filtered (i32 fd, lrcall_t filter, u0 *args)
+recv_filtered (i32 fd, lrcall_t filter, packet_args_t *args)
 {
   i64 data_size;
   u0 *buffer;
