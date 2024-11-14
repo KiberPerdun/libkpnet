@@ -5,12 +5,13 @@
 #ifndef LIBKPNET_IF_PACKET_H
 #define LIBKPNET_IF_PACKET_H
 
-#include "types.h"
+#include "if_packet.h"
 #include "ipv4.h"
 #include "ipv6.h"
-#include "tcp.h"
-#include "udp.h"
 #include "stdbool.h"
+#include "tcp.h"
+#include "types.h"
+#include "udp.h"
 
 typedef struct packet_args
 {

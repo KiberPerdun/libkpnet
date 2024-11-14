@@ -33,33 +33,44 @@ main (u0)
   memcpy (packet, mac, 14);
   memcpy (packet + 14, ip_hdr, 20);
 
-  u0 *tcp_init_hdr = build_tcp_init_hdr (12345, 80, &plen, 576, ip_hdr);
+  u0 *tcp_init_hdr = build_tcp_init_hdr (32345, 80, &plen, 576, ip_hdr);
   if (!tcp_init_hdr)
     goto cleanup;
 
   memcpy (packet + 34, tcp_init_hdr, sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
-  ((ipv4_t *)(packet + 14))->len = htons( plen - 14);
+  ((ipv4_t *)(packet + 14))->len = htons ( plen - 14);
   ((ipv4_t *)(packet + 14))->checksum = in_check ((u16 *) (packet + 14), sizeof (ipv4_t));
 
   e = eth_open ("wlan0");
   eth_send (e, packet, plen);
+  plen = 34;
 
   packet_args_t *args = calloc (1, sizeof (packet_args_t));
   if (!args)
     goto cleanup;
 
-  args->srcport = 12345;
+  args->srcport = 32345;
   args->dstport = 80;
   args->proto = 0x06;
 
+  args->tp_layer.tcp.TCP_STATUS = 1;
   args->net_layer.ipv4 = *ip_hdr;
   args->tp_layer.tcp._tcp = *((tcp_t *) tcp_init_hdr);
 
   recv_filtered (e->fd, if_ipv4_tcp, args);
+  u0 *tcp_ack = build_tcp_ack_hdr (32345, 80, &plen, args);
+
+  memcpy (packet + 34, tcp_ack, sizeof (tcp_t));
+  ((ipv4_t *)(packet + 14))->len = htons ( plen - 14);
+  ((ipv4_t *)(packet + 14))->checksum = 0;
+  ((ipv4_t *)(packet + 14))->checksum = in_check ((u16 *) (packet + 14), sizeof (ipv4_t));
+
+  eth_send (e, packet, plen);
 
   eth_close (e);
 
 cleanup:
+  free (tcp_ack);
   free (args);
   free (tcp_init_hdr);
   free (packet);

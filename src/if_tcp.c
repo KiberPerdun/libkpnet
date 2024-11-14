@@ -60,6 +60,7 @@ if_tcp (u0 *packet, u64 size, packet_args_t *args)
           free (buffer);
           return false;
         }
+      free (buffer);
 
       printf ("{tcp}(seq: %u, ack: %u, win: %hu, urgent: %hu, flags: %hu, offset: %hu);\n",
               ntohl (buf->seq),
@@ -68,6 +69,13 @@ if_tcp (u0 *packet, u64 size, packet_args_t *args)
               ntohs (buf->urgent),
               ntohs (buf->flags) & 0x1FF,
               offset);
+
+      if ((ntohs (buf->flags) & 0x1FF) == 0x12 && args->tp_layer.tcp.TCP_STATUS == TCP_SYN)
+        {
+          args->tp_layer.tcp.TCP_STATUS = TCP_SYNACK;
+          args->tp_layer.tcp._tcp.seq = buf->seq;
+          args->tp_layer.tcp._tcp.ack = buf->ack;
+        }
 
       offset -= 5;
       opts = buf;

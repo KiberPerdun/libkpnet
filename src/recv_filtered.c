@@ -17,9 +17,10 @@ recv_filtered (i32 fd, lrcall_t filter, packet_args_t *args)
       data_size = recv (fd, buffer , 65536, 0);
       if (data_size > 46)
         {
-          if (!filter (buffer, data_size, args))
+          if (filter (buffer, data_size, args))
             {
-              continue;
+              printf ("%d", args->tp_layer.tcp.TCP_STATUS);
+              break;
             }
 
           //puts ("not aeee");
