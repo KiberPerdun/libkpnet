@@ -15,8 +15,11 @@
 
 typedef struct packet_args
 {
+  u16 packet_len;
   u32 srcport;
   u32 dstport;
+  u0 *packet;
+  eth_t *e;
   u16 plen;
   u8 proto;
 

@@ -25,6 +25,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         if_tcp.c
         if_ipv4_tcp.c
         build_tcp_ack_hdr.c
+        tcp_make_handshake.c
 )
 
 add_executable(src ${SOURCES})
