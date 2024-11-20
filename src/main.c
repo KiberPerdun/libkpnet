@@ -44,7 +44,7 @@ main (u0)
   args->plen = sizeof (mac_t);
 
   ipv4_t *ip_hdr
-      = fill_ipv4 (inet_addr ("172.20.10.8"), inet_addr ("74.125.131.101"));
+      = fill_ipv4 (inet_addr ("172.20.10.8"), inet_addr ("64.233.165.113"), 0x06);
 
   memcpy (packet + args->plen, ip_hdr, sizeof (ipv4_t));
   args->plen += sizeof (ipv4_t);  /* 34 */
@@ -52,6 +52,9 @@ main (u0)
 
   e = eth_open ("wlan0");
   tcp_make_handshake (args, e);
+
+  /* tcp_get_html (args, e); */
+
   eth_close (e);
 
 cleanup:

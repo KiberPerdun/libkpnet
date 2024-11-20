@@ -58,6 +58,7 @@ if_tcp (u0 *packet, u64 size, packet_args_t *args)
       if (pk_check != tcp_checksum ((u16 *)buffer, sizeof (pseudo_t) + offset * 4))
         {
           free (buffer);
+          puts ("CHECK HYETA");
           return false;
         }
       free (buffer);
@@ -73,8 +74,21 @@ if_tcp (u0 *packet, u64 size, packet_args_t *args)
       if ((ntohs (buf->flags) & 0x1FF) == 0x12 && args->tp_layer.tcp.TCP_STATUS == TCP_SYN)
         {
           args->tp_layer.tcp.TCP_STATUS = TCP_SYNACK;
-          args->tp_layer.tcp._tcp.seq = buf->seq;
-          args->tp_layer.tcp._tcp.ack = buf->ack;
+          args->tp_layer.tcp._tcp.seq = buf->ack;
+          args->tp_layer.tcp._tcp.ack = buf->seq;
+        }
+      else if (((ntohs (buf->flags) & 0x1ff) == 0x18 || (ntohs (buf->flags) & 0x1ff) == 0x10) && args->tp_layer.tcp.TCP_STATUS == TCP_ESTABLISHED)
+        {
+          if (size <= (sizeof (ipv4_t) + sizeof (tcp_t)))
+            return false;
+
+          args->data_len = size - (sizeof (ipv4_t) + sizeof (tcp_t) + (offset - 4) * 4);
+          printf ("%u %u", args->data_len, size);
+          fflush (stdout);
+          args->data = malloc (args->data_len + 1);
+          ((u8 *) args->data)[args->data_len] = '\0';
+          memcpy (args->data, packet + 14 + sizeof (ipv4_t) + sizeof (tcp_t) + ((offset - 4) * 4), args->data_len);
+          return true;
         }
 
       offset -= 5;

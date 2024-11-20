@@ -67,17 +67,17 @@ in_check (u16 *ptr, int nbytes)
 }
 
 ipv4_t *
-fill_ipv4 (u32 src, u32 dst)
+fill_ipv4 (u32 src, u32 dst, u8 proto)
 {
   ipv4_t *hdr = malloc (sizeof (ipv4_t));
   hdr->ihl = 5;
   hdr->ver = 4;
   hdr->tos = htons (0x2);
   hdr->len = 0;
-  hdr->indent = htons (17091);
+  hdr->indent = htons (rand ());
   hdr->offset = 0;
   hdr->ttl = 181;
-  hdr->proto = 0x06; // PROTO_SCTP
+  hdr->proto = proto; // PROTO_SCTP
   hdr->src_addr = src;
   hdr->dest_addr = dst;
   hdr->checksum = 0;

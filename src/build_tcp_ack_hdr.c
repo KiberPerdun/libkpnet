@@ -20,7 +20,7 @@ build_tcp_ack_hdr (u16 src_port, u16 dst_port, u16 *plen, u0 *args)
   ip = arg->net_layer.ipv4;
 
   if (!(hdr
-        = build_tcp_raw (src_port, dst_port, ntohl (arg->tp_layer.tcp._tcp.ack), ntohl (arg->tp_layer.tcp._tcp.seq) + 1, 0x10, 64240, 0, 0)))
+        = build_tcp_raw (src_port, dst_port, ntohl (arg->tp_layer.tcp._tcp.seq), ntohl (arg->tp_layer.tcp._tcp.ack += htonl (1)), 0x10, 64240, 0, 0)))
     return NULL;
 
   *plen += sizeof (tcp_t);

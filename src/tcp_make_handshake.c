@@ -14,7 +14,7 @@ tcp_make_handshake (u0 *ars, eth_t *e)
   args = ars;
   packet = args->packet + args->plen;
 
-  phase = build_tcp_init_hdr (args->srcport, args->dstport, &args->plen, 536, &args->net_layer.ipv4);
+  phase = build_tcp_init_hdr (args->srcport, args->dstport, &args->plen, -1, &args->net_layer.ipv4);
   memcpy (packet, phase, sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
 
   ((ipv4_t *)(args->packet + 14))->len = htons ( args->plen - 14);
@@ -45,6 +45,8 @@ tcp_make_handshake (u0 *ars, eth_t *e)
 
   eth_send (e, args->packet, args->plen);
   args->tp_layer.tcp.TCP_STATUS = TCP_ESTABLISHED;
+
+  args->plen -= sizeof (tcp_t);
 
   free (phase);
 }
