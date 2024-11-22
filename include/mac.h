@@ -6,6 +6,7 @@
 #define LIBKPNET_MAC_H
 
 #include "types.h"
+#include <stdbool.h>
 
 typedef struct mac_hdr
 {
@@ -13,7 +14,7 @@ typedef struct mac_hdr
   u16 type;
 } mac_t;
 
-mac_t *build_mac_client_raw (const u8 *gateway, const u8 *self, u16 typelen);
+bool build_mac_client_raw (const u8 *gateway, const u8 *self, u16 typelen, u0 *args);
 mac_t *mac_client_fill_hdr (u16 typelen);
 
 #endif // LIBKPNET_MAC_H

@@ -13,47 +13,53 @@
 #include "types.h"
 #include "udp.h"
 
-typedef struct packet_args
+#define MAX_PACKET_LEN 1516
+
+typedef struct connection_args
 {
-  u16 packet_len;
-  u32 srcport;
-  u32 dstport;
   u0 *packet;
-  u0 *data;
-  u16 data_len;
-  eth_t *e;
   u16 plen;
   u8 proto;
+  u32 srcport;
+  u32 dstport;
+  eth_t *eth;
 
   union
   {
-    ipv4_t ipv4;
-    ipv6_t ipv6;
+    ipv4_t *ipv4;
+    ipv6_t *ipv6;
   } net_layer;
 
   union
   {
-    struct
+    union
     {
-      tcp_t _tcp;
+      tcp_t *_tcp;
       enum
       {
-        TCP_SYN = 1,
-        TCP_SYNACK = 2,
-        TCP_ESTABLISHED = 3,
-        TCP_TORN = 4,
+        TCP_LISTEN = 1,
+        TCP_SYN_SENT = 2,
+        TCP_SYN_RECEIVED = 3,
+        TCP_ESTABLISHED_CONNECTON = 4,
+        TCP_FIN_WAIT_1 = 5,
+        TCP_FIN_WAIT_2 = 6,
+        TCP_CLOSE_WAIT = 7,
+        TCP_CLOSING = 8,
+        TCP_LAST_ACK = 9,
+        TCP_TIME_WAIT = 10,
+        TCP_CLOSED = 11,
       } TCP_STATUS;
     } tcp;
 
-    udp_t udp;
+    udp_t *udp;
   } tp_layer;
-} packet_args_t;
+} connection_args_t;
 
-typedef bool (*lrcall_t)(u0 *, u64, packet_args_t *);
+typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
 
-u0 recv_filtered (i32 fd, lrcall_t filter, packet_args_t * args);
-bool if_ipv4 (u0 *packet, u64 size, packet_args_t *args);
-bool if_tcp (u0 *packet, u64 size, packet_args_t *args);
-bool if_ipv4_tcp (u0 *packet, u64 size, packet_args_t *args);
+u0 recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
+bool if_ipv4 (u0 *packet, u64 size, connection_args_t *args);
+bool if_tcp (u0 *packet, u64 size, connection_args_t *args);
+bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
 
 #endif // LIBKPNET_IF_PACKET_H

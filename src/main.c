@@ -13,16 +13,18 @@
 i32
 main (u0)
 {
-  packet_args_t *args;
+  connection_args_t *args;
   u0 *packet;
   eth_t *e;
   u16 src_port, dst_port;
   mac_t *mac;
 
+  e = eth_open ("wlan0");
+
   time_t t;
   srand ((u32) time (&t));
 
-  if (!(args = calloc (1, sizeof (packet_args_t))))
+  if (!(args = calloc (1, sizeof (connection_args_t))))
     goto cleanup;
 
   if (!(packet = calloc (1, 1500)))
@@ -31,27 +33,32 @@ main (u0)
   dst_port = 80;
   src_port = 443 + rand () % 65000;
 
-  args->srcport = src_port;
-  args->dstport = dst_port;
+  args->srcport = htons (src_port);
+  args->dstport = htons (dst_port);
   args->proto = IPPROTO_TCP;
-  args->packet_len = 1500;
   args->packet = packet;
+  args->eth = e;
+  args->plen = 0;
+  args->tp_layer.tcp.TCP_STATUS = TCP_CLOSED;
 
-  mac = build_mac_client_raw ("9a:60:ca:f3:df:64", "50:28:4a:b4:bf:2c",
-                               ETHERTYPE_IP);
+  build_mac_client_raw ("9a:60:ca:f3:df:64", "50:28:4a:b4:bf:2c",
+                               ETHERTYPE_IP, args);
 
-  memcpy (packet, mac, sizeof (mac_t));
-  args->plen = sizeof (mac_t);
+  /* FIN ACK 0x011 */
 
-  ipv4_t *ip_hdr
-      = fill_ipv4 (inet_addr ("172.20.10.8"), inet_addr ("64.233.165.113"), 0x06);
+  fill_ipv4 (inet_addr ("172.20.10.8"), inet_addr ("64.233.165.113"), 0x06, args);
 
-  memcpy (packet + args->plen, ip_hdr, sizeof (ipv4_t));
-  args->plen += sizeof (ipv4_t);  /* 34 */
-  args->net_layer.ipv4 = *ip_hdr;
+  build_tcp_init_hdr (args);
 
-  e = eth_open ("wlan0");
-  tcp_make_handshake (args, e);
+  eth_send (e, args->packet, args->plen);
+
+  recv_filtered (e->fd, if_ipv4_tcp, args);
+
+  build_tcp_ack_hdr (args);
+
+  eth_send (e, args->packet, args->plen);
+
+  /* tcp_make_handshake (args, e); */
 
   /* tcp_get_html (args, e); */
 
@@ -60,6 +67,5 @@ main (u0)
 cleanup:
   free (args);
   free (packet);
-  free (ip_hdr);
   free (mac);
 }

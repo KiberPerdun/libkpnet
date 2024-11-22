@@ -11,6 +11,15 @@
 #include <assert.h>
 #include <stdbool.h>
 
+typedef struct pseudo_header
+{
+  u32 source_address;
+  u32 dest_address;
+  u8 placeholder;
+  u8 protocol;
+  u16 tcp_length;
+} pseudo_t;
+
 typedef struct tcp_hdr {
   u16 srcp;
   u16 dstp;
@@ -32,14 +41,13 @@ typedef struct tcp_option_mss {
   u16 mss;
 } tcp_opt_mss_t;
 
-tcp_t *tcp_fill_init_hdr (u16 src, u16 dst, u16 flags);
+bool tcp_fill_init_hdr (u0 *args);
 tcp_opt_mss_t *tcp_fill_opt_mss (u16 mss);
 u16 tcp_checksum (u16 *ptr, int nbytes);
-u0 *build_tcp_init_hdr (u16 src_port, u16 dst_port, u16 *plen, u16 mss,
-                        ipv4_t *ip);
-u0 *build_tcp_ack_hdr (u16 src_port, u16 dst_port, u16 *plen, u0 *args);
-u0 *build_tcp_raw (u16 src_port, u16 dst_port, u32 seq, u32 ack, u16 flags,
-                   u16 win, u16 urgent, u8 optlen);
+bool build_tcp_init_hdr (u0 *args);
+bool build_tcp_ack_hdr (u0 *args);
+u0 *build_tcp_raw (u32 seq, u32 ack, u16 flags,
+                   u16 win, u16 urgent, u8 optlen, u0 *options, u0 *args);
 u0 tcp_make_handshake (u0 *args, eth_t *e);
 u0 *tcp_get_html (u0 *args, eth_t *e);
 

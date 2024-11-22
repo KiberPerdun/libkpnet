@@ -8,8 +8,10 @@
 u0
 tcp_make_handshake (u0 *ars, eth_t *e)
 {
-  packet_args_t *args;
+  connection_args_t *args;
   u0 *phase, *packet;
+
+  /*
 
   args = ars;
   packet = args->packet + args->plen;
@@ -47,6 +49,8 @@ tcp_make_handshake (u0 *ars, eth_t *e)
   args->tp_layer.tcp.TCP_STATUS = TCP_ESTABLISHED;
 
   args->plen -= sizeof (tcp_t);
+
+   */
 
   free (phase);
 }

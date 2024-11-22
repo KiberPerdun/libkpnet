@@ -5,38 +5,21 @@
 #include "tcp.h"
 #include "if_packet.h"
 
-u0 *
-build_tcp_ack_hdr (u16 src_port, u16 dst_port, u16 *plen, u0 *args)
+bool
+build_tcp_ack_hdr (u0 *ars)
 {
-  packet_args_t *arg;
-  ipv4_t ip;
+  connection_args_t *args;
   u0 *hdr;
 
-  assert (plen);
-  assert (args);
-  assert (*plen >= 0);
-
-  arg = args;
-  ip = arg->net_layer.ipv4;
+  args = ars;
 
   if (!(hdr
-        = build_tcp_raw (src_port, dst_port, ntohl (arg->tp_layer.tcp._tcp.seq), ntohl (arg->tp_layer.tcp._tcp.ack += htonl (1)), 0x10, 64240, 0, 0)))
-    return NULL;
-
-  *plen += sizeof (tcp_t);
-
-  typedef struct pseudo_header
-  {
-    u32 source_address;
-    u32 dest_address;
-    u8 placeholder;
-    u8 protocol;
-    u16 tcp_length;
-  } pseudo_t;
+        = build_tcp_raw (ntohl (args->tp_layer.tcp._tcp->seq), ntohl (args->tp_layer.tcp._tcp->ack += htonl (1)), 0x10, 64240, 0, 0, NULL, args)))
+    return false;
 
   pseudo_t psh;
-  psh.source_address = ip.src_addr;
-  psh.dest_address = ip.dest_addr;
+  psh.source_address = args->net_layer.ipv4->src_addr;
+  psh.dest_address = args->net_layer.ipv4->dest_addr;
   psh.placeholder = 0;
   psh.protocol = IPPROTO_TCP;
 
@@ -48,9 +31,17 @@ build_tcp_ack_hdr (u16 src_port, u16 dst_port, u16 *plen, u0 *args)
   memcpy (buffer + sizeof (pseudo_t), hdr,
           sizeof (tcp_t));
 
-  ((tcp_t *)hdr)->check
-      = tcp_checksum ((u16 *)buffer, sizeof (struct pseudo_header) + sizeof (tcp_t));
-  free (buffer);
+  memcpy (args->tp_layer.tcp._tcp, hdr, sizeof (tcp_t));
+  args->plen += sizeof (tcp_t);
 
-  return hdr;
+  args->tp_layer.tcp._tcp->check = tcp_checksum ((u16 *) buffer, sizeof (pseudo_t) + sizeof (tcp_t));
+  args->net_layer.ipv4->len = htons (sizeof (ipv4_t) + sizeof (tcp_t));
+
+  args->net_layer.ipv4->checksum = 0;
+  args->net_layer.ipv4->checksum = in_check ((u16 *) (args->net_layer.ipv4), sizeof (ipv4_t));
+
+  free (buffer);
+  free (hdr);
+
+  return true;
 }

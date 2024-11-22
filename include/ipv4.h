@@ -37,7 +37,7 @@ typedef struct ipv4_hdr {
 #define ip_check_carry(x)                                                     \
   (x = (x >> 16) + (x & 0xffff), (~(x + (x >> 16)) & 0xffff))
 
-ipv4_t *fill_ipv4(u32 src, u32 dst, u8 proto);
+bool fill_ipv4(u32 src, u32 dst, u8 proto, u0 *args);
 int ip_check_add (const void *buf, size_t len, int check);
 u16 in_check (u16 *ptr, int nbytes);
 

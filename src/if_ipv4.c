@@ -5,15 +5,15 @@
 #include "if_packet.h"
 
 bool
-if_ipv4 (u0 *packet, u64 size, packet_args_t *args)
+if_ipv4 (u0 *packet, u64 size, connection_args_t *args)
 {
   ipv4_t *hdr;
 
-  if (args->net_layer.ipv4.ver == 4)
+  if (sizeof (mac_t) + sizeof (ipv4_t) <= size)
   {
-    hdr = packet + 14;
+    hdr = packet + sizeof (mac_t);
 
-    if (hdr->src_addr == args->net_layer.ipv4.dest_addr)
+    if (hdr->src_addr == args->net_layer.ipv4->dest_addr)
       {
         printf ("[Packet start\n{ipv4}(proto: %d, len: %d);\n",
                 hdr->proto,

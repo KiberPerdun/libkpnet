@@ -9,9 +9,11 @@ u0 *
 tcp_get_html (u0 *ars, eth_t *e)
 {
   tcp_t *phase;
-  packet_args_t *args;
+  connection_args_t *args;
   u0 *buf, *packet;
   u16 payload_len;
+
+  /*
 
   const char *str = "GET / HTTP/1.0\r\n\r\n";
 
@@ -20,7 +22,7 @@ tcp_get_html (u0 *ars, eth_t *e)
   if (!(buf = calloc (1, args->tp_layer.tcp._tcp.win)))
     return NULL;
 
-  phase = build_tcp_raw (args->srcport, args->dstport, ntohl (args->tp_layer.tcp._tcp.seq), ntohl (args->tp_layer.tcp._tcp.ack), 0x10, 64240, 0, 0);
+  phase = build_tcp_raw (args->srcport, args->dstport, ntohl (args->tp_layer.tcp._tcp.seq), ntohl (args->tp_layer.tcp._tcp.ack), 0x10, 64240, 0, 0, NULL, NULL);
   payload_len = strlen (str);
   memcpy (packet + 34 + sizeof (tcp_t), str, payload_len);
 
@@ -63,6 +65,8 @@ tcp_get_html (u0 *ars, eth_t *e)
 
   puts (args->data);
   free (args->data);
+
+   */
 
   return buf;
 }

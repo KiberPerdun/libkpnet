@@ -4,27 +4,35 @@
 
 #include "tcp.h"
 #include <arpa/inet.h>
+#include "if_packet.h"
 
-
-struct pseudo_header {
-  uint32_t source_address;
-  uint32_t dest_address;
-  uint8_t placeholder;
-  uint8_t protocol;
-  uint16_t tcp_length;
-};
-
-tcp_t *
-tcp_fill_init_hdr (u16 src, u16 dst, u16 flags)
+bool
+tcp_fill_init_hdr (u0 *ars)
 {
-  tcp_t *hdr = malloc (sizeof (tcp_t));
-  hdr->srcp = htons (src);
-  hdr->dstp = htons (dst);
+  connection_args_t *args;
+  tcp_t *hdr;
+
+  if (args->packet == NULL)
+    return false;
+
+  if (!(MAX_PACKET_LEN >= args->plen + sizeof (tcp_t)))
+    return false;
+
+  if ((hdr = malloc (sizeof (tcp_t))) == NULL)
+    {
+      free (hdr);
+      return false;
+    }
+
+  args = ars;
+
+  hdr->srcp = args->srcport;
+  hdr->dstp = args->dstport;
   hdr->seq = 0;
   hdr->ack = 0;
-  hdr->flags = htons ((5 + (4 / 4)) << 12 | flags);
+  hdr->flags = htons ((5 + (4 / 4)) << 12 | 0x011);
   hdr->win = htons (64240);
   hdr->check = 0;
   hdr->urgent = 0;
-  return hdr;
+  return true;
 }
