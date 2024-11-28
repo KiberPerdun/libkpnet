@@ -6,7 +6,7 @@
 #include "if_packet.h"
 
 u0 *
-tcp_get_html (u0 *ars, eth_t *e)
+tcp_get_html (u0 *ars)
 {
   tcp_t *phase;
   connection_args_t *args;

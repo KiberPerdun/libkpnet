@@ -30,27 +30,24 @@ typedef struct connection_args
     ipv6_t *ipv6;
   } net_layer;
 
+  enum
+  {
+    TCP_LISTEN = 1,
+    TCP_SYN_SENT = 2,
+    TCP_SYN_RECEIVED = 3,
+    TCP_ESTABLISHED_CONNECTON = 4,
+    TCP_FIN_WAIT_1 = 5,
+    TCP_FIN_WAIT_2 = 6,
+    TCP_CLOSE_WAIT = 7,
+    TCP_CLOSING = 8,
+    TCP_LAST_ACK = 9,
+    TCP_TIME_WAIT = 10,
+    TCP_CLOSED = 11,
+  } TCP_STATUS;
+
   union
   {
-    union
-    {
-      tcp_t *_tcp;
-      enum
-      {
-        TCP_LISTEN = 1,
-        TCP_SYN_SENT = 2,
-        TCP_SYN_RECEIVED = 3,
-        TCP_ESTABLISHED_CONNECTON = 4,
-        TCP_FIN_WAIT_1 = 5,
-        TCP_FIN_WAIT_2 = 6,
-        TCP_CLOSE_WAIT = 7,
-        TCP_CLOSING = 8,
-        TCP_LAST_ACK = 9,
-        TCP_TIME_WAIT = 10,
-        TCP_CLOSED = 11,
-      } TCP_STATUS;
-    } tcp;
-
+    tcp_t *tcp;
     udp_t *udp;
   } tp_layer;
 } connection_args_t;

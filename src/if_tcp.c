@@ -53,14 +53,12 @@ if_tcp (u0 *packet, u64 size, connection_args_t *args)
               ntohs (buf->urgent),
               ntohs (buf->flags) & 0x1FF,
               offset);
-      
 
-
-      if ((ntohs (buf->flags) & 0x1FF) == 0x12 && args->tp_layer.tcp.TCP_STATUS == TCP_CLOSED)
+      if (((ntohs (buf->flags) & 0x1FF) == 0x12) && args->TCP_STATUS == TCP_SYN_SENT)
         {
-          args->tp_layer.tcp.TCP_STATUS = TCP_SYN_RECEIVED;
-          args->tp_layer.tcp._tcp->seq = ntohl (buf->ack);
-          args->tp_layer.tcp._tcp->ack = ntohl (buf->seq);
+          args->TCP_STATUS = TCP_SYN_RECEIVED;
+          args->tp_layer.tcp->seq = buf->ack;
+          args->tp_layer.tcp->ack = buf->seq;
         }
       /*
       else if (((ntohs (buf->flags) & 0x1ff) == 0x18 || (ntohs (buf->flags) & 0x1ff) == 0x10) && args->tp_layer.tcp.TCP_STATUS == TCP_ESTABLISHED)

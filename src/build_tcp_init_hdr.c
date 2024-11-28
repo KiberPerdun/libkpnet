@@ -16,7 +16,7 @@ build_tcp_init_hdr (u0 *ars)
   if (args->packet == NULL)
     return false;
 
-  if (!(MAX_PACKET_LEN >= args->plen + sizeof (tcp_t)))
+  if (MAX_PACKET_LEN < args->plen + sizeof (tcp_t))
     return false;
 
   if ((hdr = build_tcp_raw (2856147168, 0, 0x2, 64240, 0, 0, NULL, args)) == NULL)
@@ -29,11 +29,11 @@ build_tcp_init_hdr (u0 *ars)
     {
       pseudo_t psh;
 
-      if (args->tp_layer.tcp._tcp)
-        args->plen = (u16) ((u0 *) args->tp_layer.tcp._tcp - args->packet);
+      if (args->tp_layer.tcp != NULL)
+        args->plen = (u16) ((u0 *) args->tp_layer.tcp - args->packet);
 
-      args->tp_layer.tcp._tcp = args->packet + 14 + 20;
-      memcpy (args->tp_layer.tcp._tcp, hdr, sizeof (tcp_t));
+      args->tp_layer.tcp = args->packet + args->plen;
+      memcpy (args->tp_layer.tcp, hdr, sizeof (tcp_t));
       args->plen += sizeof (tcp_t);
 
       psh.source_address = args->net_layer.ipv4->src_addr;
@@ -48,7 +48,7 @@ build_tcp_init_hdr (u0 *ars)
       memcpy (buffer + sizeof (pseudo_t), hdr,
               sizeof (tcp_t));
 
-      args->tp_layer.tcp._tcp->check = tcp_checksum ((u16 *) buffer, sizeof (pseudo_t) + sizeof (tcp_t));
+      args->tp_layer.tcp->check = tcp_checksum ((u16 *) buffer, sizeof (pseudo_t) + sizeof (tcp_t));
       args->net_layer.ipv4->len = htons (sizeof (ipv4_t) + sizeof (tcp_t));
 
       args->net_layer.ipv4->checksum = 0;

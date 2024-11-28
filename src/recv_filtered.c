@@ -21,7 +21,7 @@ recv_filtered (i32 fd, lrcall_t filter, connection_args_t *args)
         {
           if (filter (buf_cp, data_size, args))
             {
-              printf ("%d", args->tp_layer.tcp.TCP_STATUS);
+              printf ("%d", args->TCP_STATUS);
               break;
             }
 

@@ -78,7 +78,7 @@ fill_ipv4 (u32 src, u32 dst, u8 proto, u0 *ars)
   if (args->packet == NULL)
     return false;
 
-  if (!(MAX_PACKET_LEN >= args->plen + sizeof (ipv4_t)))
+  if (MAX_PACKET_LEN < args->plen + sizeof (ipv4_t))
     return false;
 
   if ((hdr = malloc (sizeof (ipv4_t))) == NULL)

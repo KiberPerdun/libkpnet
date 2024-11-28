@@ -55,7 +55,7 @@ build_mac_client_raw (const u8 *gateway, const u8 *self, u16 typelen, u0 *ars)
     }
 
   mac->type = htons (typelen);
-  memcpy (args->packet, mac, args->plen += sizeof (mac_t));
+  memcpy (args->packet, mac, args->plen = sizeof (mac_t));
 
   free (mac);
 

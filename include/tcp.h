@@ -48,7 +48,7 @@ bool build_tcp_init_hdr (u0 *args);
 bool build_tcp_ack_hdr (u0 *args);
 u0 *build_tcp_raw (u32 seq, u32 ack, u16 flags,
                    u16 win, u16 urgent, u8 optlen, u0 *options, u0 *args);
-u0 tcp_make_handshake (u0 *args, eth_t *e);
-u0 *tcp_get_html (u0 *args, eth_t *e);
+u0 tcp_make_handshake (u0 *args);
+u0 *tcp_get_html (u0 *args);
 
 #endif // LIBKPNET_TCP_H

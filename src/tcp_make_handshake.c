@@ -6,51 +6,29 @@
 #include "if_packet.h"
 
 u0
-tcp_make_handshake (u0 *ars, eth_t *e)
+tcp_make_handshake (u0 *ars)
 {
   connection_args_t *args;
-  u0 *phase, *packet;
-
-  /*
 
   args = ars;
-  packet = args->packet + args->plen;
 
-  phase = build_tcp_init_hdr (args->srcport, args->dstport, &args->plen, -1, &args->net_layer.ipv4);
-  memcpy (packet, phase, sizeof (tcp_t) + sizeof (tcp_opt_mss_t));
+  build_tcp_init_hdr (args);
+  eth_send (args->eth, args->packet, args->plen);
 
-  ((ipv4_t *)(args->packet + 14))->len = htons ( args->plen - 14);
-  ((ipv4_t *)(args->packet + 14))->checksum = 0;
-  ((ipv4_t *)(args->packet + 14))->checksum = in_check ((u16 *) (args->packet + 14), sizeof (ipv4_t));
+  args->TCP_STATUS = TCP_SYN_SENT;
 
-  args->tp_layer.tcp._tcp = *((tcp_t *) phase);
-  free (phase);
-  args->tp_layer.tcp.TCP_STATUS = 1;
+  recv_filtered (args->eth->fd, if_ipv4_tcp, args);
 
-  eth_send (e, args->packet, args->plen);
-
-  recv_filtered (e->fd, if_ipv4_tcp, args);
-
-  if (args->tp_layer.tcp.TCP_STATUS != TCP_SYNACK)
+  if (args->TCP_STATUS != TCP_SYN_RECEIVED)
     {
-      args->tp_layer.tcp.TCP_STATUS = TCP_TORN;
+      args->TCP_STATUS = TCP_CLOSED;
       return;
     }
 
-  args->plen -= 24;
+  build_tcp_ack_hdr (args);
+  eth_send (args->eth, args->packet, args->plen);
 
-  phase = build_tcp_ack_hdr (args->srcport, args->dstport, &args->plen, args);
-  ((ipv4_t *)(args->packet + 14))->len = htons ( args->plen - 14);
-  ((ipv4_t *)(args->packet + 14))->checksum = 0;
-  ((ipv4_t *)(args->packet + 14))->checksum = in_check ((u16 *) (args->packet + 14), sizeof (ipv4_t));
-  memcpy (packet, phase, sizeof (tcp_t));
+  if (args->TCP_STATUS == TCP_SYN_RECEIVED)
+    args->TCP_STATUS = TCP_ESTABLISHED_CONNECTON;
 
-  eth_send (e, args->packet, args->plen);
-  args->tp_layer.tcp.TCP_STATUS = TCP_ESTABLISHED;
-
-  args->plen -= sizeof (tcp_t);
-
-   */
-
-  free (phase);
 }
