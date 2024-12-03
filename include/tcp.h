@@ -46,7 +46,7 @@ tcp_opt_mss_t *tcp_fill_opt_mss (u16 mss);
 u16 tcp_checksum (u16 *ptr, u64 nbytes);
 bool build_tcp_init_hdr (u0 *args);
 bool build_tcp_ack_hdr (u0 *args);
-bool build_tcp_payload_hdr (u0 *args, u0 *payload, u16 payload_len);
+bool build_tcp_payload_hdr (u0 *args);
 u0 *build_tcp_raw (u32 seq, u32 ack, u16 flags,
                    u16 win, u16 urgent, u8 optlen, u0 *options, u0 *args);
 u0 tcp_make_handshake (u0 *args);

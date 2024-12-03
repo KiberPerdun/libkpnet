@@ -17,12 +17,13 @@
 
 typedef struct connection_args
 {
-  u0 *packet;
-  u16 plen;
-  u8 proto;
+  char *payload;
   u32 srcport;
   u32 dstport;
+  u0 *packet;
   eth_t *eth;
+  u16 plen;
+  u8 proto;
 
   union
   {

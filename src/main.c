@@ -46,25 +46,34 @@ main (u0)
 
   /* FIN ACK 0x011 */
 
-  fill_ipv4 (inet_addr ("192.168.0.108"), inet_addr ("1.1.1.1"), IPPROTO_TCP, args);
+  fill_ipv4 (inet_addr ("192.168.0.108"), inet_addr ("1.2.3.4"), IPPROTO_TCP, args);
 
   tcp_make_handshake (args);
 
   args->plen = sizeof (mac_t) + sizeof (ipv4_t);
 
-  u8 *cock = malloc (4);
-  cock[0] = 'c';
-  cock[1] = '0';
-  cock[2] = 'c';
-  cock[3] = 'k';
+  args->payload = malloc (MAX_PACKET_LEN - sizeof (mac_t) - sizeof (ipv4_t)
+                          - sizeof (tcp_t));
 
-  build_tcp_payload_hdr (args, cock, 4);
+  for (;;)
+    {
+      fgets (args->payload,
+             MAX_PACKET_LEN - sizeof (mac_t) - sizeof (ipv4_t)
+                 - sizeof (tcp_t),
+             stdin);
 
-  eth_send (args->eth, args->packet, args->plen);
+
+      build_tcp_payload_hdr (args);
+
+      eth_send (args->eth, args->packet, args->plen);
+
+      args->tp_layer.tcp->seq += ntohl (strlen (args->payload) - 1);
+      args->plen = sizeof (mac_t) + sizeof (ipv4_t);
+    }
 
   /* tcp_get_html (args);  */ /* maybe will be deprecated */
 
-  free (cock);
+  free (args->payload);
 
   eth_close (eth);
 
