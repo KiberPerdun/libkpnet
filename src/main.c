@@ -15,10 +15,10 @@ main (u0)
 {
   connection_args_t *args;
   u0 *packet = NULL;
-  eth_t *e;
+  eth_t *eth;
   u16 src_port, dst_port;
 
-  e = eth_open ("wlan0");
+  eth = eth_open ("wlan0");
 
   time_t t;
   srand ((u32) time (&t));
@@ -26,19 +26,17 @@ main (u0)
   if (!(args = calloc (1, sizeof (connection_args_t))))
     goto cleanup;
 
-  if (!(packet = malloc (1500)))
+  if (!(packet = calloc (1, MAX_PACKET_LEN)))
     goto cleanup;
 
-  memset (packet, 0, 1500);
-
-  dst_port = 80;
+  dst_port = 12345;
   src_port = 443 + rand () % 65000;
 
   args->srcport = htons (src_port);
   args->dstport = htons (dst_port);
   args->proto = IPPROTO_TCP;
   args->packet = packet;
-  args->eth = e;
+  args->eth = eth;
   args->plen = 0;
   args->TCP_STATUS = TCP_CLOSED;
   args->tp_layer.tcp = NULL;
@@ -48,13 +46,27 @@ main (u0)
 
   /* FIN ACK 0x011 */
 
-  fill_ipv4 (inet_addr ("192.168.0.108"), inet_addr ("64.233.165.113"), 0x06, args);
+  fill_ipv4 (inet_addr ("192.168.0.108"), inet_addr ("1.1.1.1"), IPPROTO_TCP, args);
 
   tcp_make_handshake (args);
 
-  tcp_get_html (args);
+  args->plen = sizeof (mac_t) + sizeof (ipv4_t);
 
-  eth_close (e);
+  u8 *cock = malloc (4);
+  cock[0] = 'c';
+  cock[1] = '0';
+  cock[2] = 'c';
+  cock[3] = 'k';
+
+  build_tcp_payload_hdr (args, cock, 4);
+
+  eth_send (args->eth, args->packet, args->plen);
+
+  /* tcp_get_html (args);  */ /* maybe will be deprecated */
+
+  free (cock);
+
+  eth_close (eth);
 
 cleanup:
   free (args);

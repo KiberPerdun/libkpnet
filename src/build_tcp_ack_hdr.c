@@ -13,10 +13,8 @@ build_tcp_ack_hdr (u0 *ars)
 
   args = ars;
 
-  printf ("%u, %u\n", ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack));
-
   if (!(hdr
-        = build_tcp_raw (ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack) + 1, 0x10, 64240, 0, 0, NULL, args)))
+        = build_tcp_raw (ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack += htonl (1)), 0x10, 64240, 0, 0, NULL, args)))
     return false;
 
   pseudo_t psh;
