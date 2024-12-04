@@ -30,14 +30,17 @@ if_tcp (u0 *packet, u64 size, connection_args_t *args)
 
       if (((ntohs (buf->flags) & 0x1FF) == 0x18) && args->TCP_STATUS == TCP_ESTABLISHED_CONNECTON)
       {
+        args->tp_layer.tcp->seq = buf->ack;
+        args->tp_layer.tcp->ack = buf->seq;
+
         printf ("msg: ");
         for (u32 i = 0; i < ntohs (ip->len) - sizeof (tcp_t) - sizeof (ipv4_t); ++ i)
-          putc (((u8 *) buf + sizeof (tcp_t))[i], stdout);
+          {
+            putc (((u8 *)buf + sizeof (tcp_t))[i], stdout);
+            args->tp_layer.tcp->ack += htonl (1);
+          }
 
         putc ('\n', stdout);
-
-        args->tp_layer.tcp->seq = buf->ack;
-        args->tp_layer.tcp->ack = buf->seq + (ntohs (ip->len) - sizeof (tcp_t) - sizeof (ipv4_t) - 1);
 
         return true;
       }

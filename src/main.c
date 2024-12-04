@@ -60,10 +60,6 @@ main (u0)
 
   args->plen = sizeof (mac_t) + sizeof (ipv4_t);
 
-  eth_send (args->eth, args->packet, args->plen);
-
-  recv_filtered (args->eth->fd, if_ipv4_tcp, args);
-
   for (;;)
     {
       recv_filtered (args->eth->fd, if_ipv4_tcp, args);
