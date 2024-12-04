@@ -1,5 +1,32 @@
 #include "eth.h"
 
+size_t
+_strlcpy(dst, src, siz)
+char *dst;
+const char *src;
+size_t siz;
+{
+  register char *d = dst;
+  register const char *s = src;
+  register size_t n = siz;
+
+  if (n != 0 && --n != 0) {
+      do {
+          if ((*d++ = *s++) == 0)
+            break;
+        } while (--n != 0);
+    }
+
+  if (n == 0) {
+      if (siz != 0)
+        *d = '\0';
+      while (*s++)
+        ;
+    }
+
+  return(s - src - 1);
+}
+
 eth_t *
 eth_open (const char *device)
 {
@@ -14,7 +41,7 @@ eth_open (const char *device)
   if ((eth->fd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 1)
     return eth_close (eth);
 
-  strlcpy (eth->ifr.ifr_name, device, sizeof (eth->ifr.ifr_name));
+  _strlcpy (eth->ifr.ifr_name, device, sizeof (eth->ifr.ifr_name));
   if (ioctl (eth->fd, SIOCGIFINDEX, &eth->ifr) < 0)
     return eth_close (eth);
 

@@ -18,7 +18,7 @@ main (u0)
   eth_t *eth;
   u16 src_port, dst_port;
 
-  eth = eth_open ("wlan0");
+  eth = eth_open ("wlan0-peer");
 
   time_t t;
   srand ((u32) time (&t));
@@ -29,8 +29,8 @@ main (u0)
   if (!(packet = calloc (1, MAX_PACKET_LEN)))
     goto cleanup;
 
-  dst_port = 12345;
-  src_port = 443 + rand () % 65000;
+  dst_port = 443 + rand () % 65000;
+  src_port = 12345; /* 443 + rand () % 65000 */
 
   args->srcport = htons (src_port);
   args->dstport = htons (dst_port);
@@ -38,15 +38,44 @@ main (u0)
   args->packet = packet;
   args->eth = eth;
   args->plen = 0;
-  args->TCP_STATUS = TCP_CLOSED;
+  args->TCP_STATUS = TCP_LISTEN;
   args->tp_layer.tcp = NULL;
 
-  build_mac_client_raw ("9c:a2:f4:a2:a9:3f", "50:28:4a:b4:bf:2c",
+  build_mac_client_raw ("46:9e:59:1e:5a:86", "5a:50:12:f7:b0:f5",
                                ETHERTYPE_IP, args);
 
   /* FIN ACK 0x011 */
 
-  fill_ipv4 (inet_addr ("192.168.0.108"), inet_addr ("1.2.3.4"), IPPROTO_TCP, args);
+  fill_ipv4 (inet_addr ("192.168.1.2"), inet_addr ("192.168.1.3"), IPPROTO_TCP, args);
+
+  build_tcp_init_hdr (args);
+
+  recv_filtered (args->eth->fd, if_ipv4_tcp, args);
+
+  build_tcp_syn_ack_hdr (args);
+
+  eth_send (args->eth, args->packet, args->plen);
+
+  args->tp_layer.tcp->seq += htonl (1);
+
+  args->plen = sizeof (mac_t) + sizeof (ipv4_t);
+
+  eth_send (args->eth, args->packet, args->plen);
+
+  recv_filtered (args->eth->fd, if_ipv4_tcp, args);
+
+  for (;;)
+    {
+      recv_filtered (args->eth->fd, if_ipv4_tcp, args);
+
+      args->plen = sizeof (mac_t) + sizeof (ipv4_t);
+
+      build_tcp_ack_hdr (args);
+
+      eth_send (args->eth, args->packet, args->plen);
+    }
+
+  /*
 
   tcp_make_handshake (args);
 
@@ -71,7 +100,7 @@ main (u0)
       args->plen = sizeof (mac_t) + sizeof (ipv4_t);
     }
 
-  /* tcp_get_html (args);  */ /* maybe will be deprecated */
+  */
 
   free (args->payload);
 

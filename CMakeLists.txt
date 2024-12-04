@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.20)
 project(libkpnet C)
 
 set(PROJECT_NAME libkpnet)
@@ -11,6 +11,9 @@ add_custom_target(run_with_sudo
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
 
 include_directories(
         ${PROJECT_SOURCE_DIR}

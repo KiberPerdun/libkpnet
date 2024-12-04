@@ -3,6 +3,8 @@
 //
 
 #include "if_packet.h"
+#include <stdlib.h>
+#include <time.h>
 
 bool
 if_tcp (u0 *packet, u64 size, connection_args_t *args)
@@ -25,6 +27,20 @@ if_tcp (u0 *packet, u64 size, connection_args_t *args)
 
       pk_check = buf->check;
       buf->check = 0;
+
+      if (((ntohs (buf->flags) & 0x1FF) == 0x18) && args->TCP_STATUS == TCP_ESTABLISHED_CONNECTON)
+      {
+        printf ("msg: ");
+        for (u32 i = 0; i < ntohs (ip->len) - sizeof (tcp_t) - sizeof (ipv4_t); ++ i)
+          putc (((u8 *) buf + sizeof (tcp_t))[i], stdout);
+
+        putc ('\n', stdout);
+
+        args->tp_layer.tcp->seq = buf->ack;
+        args->tp_layer.tcp->ack = buf->seq + (ntohs (ip->len) - sizeof (tcp_t) - sizeof (ipv4_t) - 1);
+
+        return true;
+      }
 
       pseudo_t psh;
       psh.source_address = ip->src_addr;
@@ -60,6 +76,24 @@ if_tcp (u0 *packet, u64 size, connection_args_t *args)
           args->tp_layer.tcp->seq = buf->ack;
           args->tp_layer.tcp->ack = buf->seq;
         }
+      else if (((ntohs (buf->flags) & 0x1FF) == 0x2) && args->TCP_STATUS == TCP_LISTEN)
+        {
+          args->TCP_STATUS = TCP_TIME_WAIT;
+          time_t t;
+          srand ((u32) time (&t));
+          args->tp_layer.tcp->seq = rand ();
+          args->tp_layer.tcp->ack = buf->seq;
+        }
+      else if (((ntohs (buf->flags) & 0x1FF) == 0x10) && args->TCP_STATUS == TCP_TIME_WAIT)
+        {
+          args->TCP_STATUS = TCP_ESTABLISHED_CONNECTON;
+          args->net_layer.ipv4->dest_addr = ip->src_addr;
+          args->tp_layer.tcp->seq = buf->ack;
+          args->tp_layer.tcp->ack = buf->seq;
+        }
+      else
+        return false;
+
       /*
       else if (((ntohs (buf->flags) & 0x1ff) == 0x18 || (ntohs (buf->flags) & 0x1ff) == 0x10) && args->tp_layer.tcp.TCP_STATUS == TCP_ESTABLISHED)
         {

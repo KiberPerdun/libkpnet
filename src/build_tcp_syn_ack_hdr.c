@@ -1,12 +1,12 @@
 //
-// Created by KiberPerdun on 14.11.24.
+// Created by KiberPerdun on 04.12.2024.
 //
 
 #include "tcp.h"
 #include "if_packet.h"
 
 bool
-build_tcp_ack_hdr (u0 *ars)
+build_tcp_syn_ack_hdr (u0 *ars)
 {
   connection_args_t *args;
   u0 *hdr;
@@ -14,7 +14,7 @@ build_tcp_ack_hdr (u0 *ars)
   args = ars;
   /* 0x10 */
   if (!(hdr
-        = build_tcp_raw (ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack += htonl (1)), 0x10, 64240, 0, 0, NULL, args)))
+        = build_tcp_raw (ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack += htonl (1)), 0x12, 64240, 0, 0, NULL, args)))
     return false;
 
   pseudo_t psh;
@@ -45,3 +45,4 @@ build_tcp_ack_hdr (u0 *ars)
 
   return true;
 }
+
