@@ -2,9 +2,6 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         ../include/sctp.h
         ../include/ipv4.h
         fill_ipv4.c
-        sctp_fill_common_hdr.c
-        sctp_fill_init.c
-        sctp_fill_chunk_hdr.c
         eth_open.c
         eth_close.c
         eth_send.c
@@ -29,6 +26,13 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         tcp_get_html.c
         build_tcp_payload_hdr.c
         build_tcp_syn_ack_hdr.c
+        build_sctp_hdr_raw.c
+        if_ipv4_sctp.c
+        if_sctp.c
+        generate_crc32c.c
+        create_client.c
+        create_server.c
+        ../include/get_random.h
 )
 
 add_executable(src ${SOURCES})

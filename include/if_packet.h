@@ -17,6 +17,7 @@
 
 typedef struct connection_args
 {
+  /* For general purpose */
   char *payload;
   u32 srcport;
   u32 dstport;
@@ -24,6 +25,25 @@ typedef struct connection_args
   eth_t *eth;
   u16 plen;
   u8 proto;
+
+  /* SCTP only */
+  struct
+  {
+    bool slave;
+    u32 src_ver_tag;
+    u32 dst_ver_tag;
+    u32 src_tsn;
+    u32 dst_tsn;
+
+    u32 self_a_rwnd;
+    u32 dest_a_rwnd;
+
+    u16 self_os;
+    u16 self_mis;
+
+    u16 dest_os;
+    u16 dest_mis;
+  } sctp_connection;
 
   union
   {
@@ -46,18 +66,28 @@ typedef struct connection_args
     TCP_CLOSED = 11,
   } TCP_STATUS;
 
+  enum
+  {
+    SCTP_LISTEN = 1,
+    SCTP_INIT_SENT = 2,
+    SCTP_INIT_RECIEVED = 3,
+  } SCTP_STATUS;
+
   union
   {
     tcp_t *tcp;
     udp_t *udp;
+    sctp_t *sctp;
   } tp_layer;
 } connection_args_t;
 
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
 
-u0 recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
+u0   recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
 bool if_ipv4 (u0 *packet, u64 size, connection_args_t *args);
 bool if_tcp (u0 *packet, u64 size, connection_args_t *args);
+bool if_sctp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
+bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
 
 #endif // LIBKPNET_IF_PACKET_H

@@ -13,6 +13,7 @@ if_ipv4 (u0 *packet, u64 size, connection_args_t *args)
   {
     hdr = packet + sizeof (mac_t);
 
+    /* will be deprecated */
     if (hdr->src_addr == args->net_layer.ipv4->dest_addr)
       {
         printf ("[Packet start\n{ipv4}(proto: %d, len: %d);\n",
