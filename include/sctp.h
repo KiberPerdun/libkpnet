@@ -164,6 +164,12 @@ typedef struct sctp_hdr
   } type;
 } sctp_t;
 
+typedef struct sctp_opt
+{
+  u16 type;
+  u16 len;
+} sctp_opt_t;
+
 u32 generate_crc32c (const u8 *buffer, u32 length);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);
 

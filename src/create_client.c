@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "get_random.h"
 
 u0 *
 create_client (u16 *proto_type)
@@ -58,7 +59,7 @@ create_client (u16 *proto_type)
     case (IPPROTO_SCTP):
       {
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-        build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT, 16, 16, 368, 0,
+        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
                             args);
         args->net_layer.ipv4->len += htons (52);
         args->net_layer.ipv4->checksum = 0;

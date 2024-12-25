@@ -33,6 +33,9 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         create_client.c
         create_server.c
         ../include/get_random.h
+        get_random_u32.c
+        get_random_u64.c
+        get_random.c
 )
 
 add_executable(src ${SOURCES})

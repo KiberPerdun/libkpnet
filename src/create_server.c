@@ -3,10 +3,8 @@
 //
 
 #include "eth.h"
-#include "eth.h"
 #include "if_packet.h"
 #include "ipv4.h"
-#include "tcp.h"
 #include "types.h"
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -14,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "get_random.h"
 
 
 u0 *
@@ -31,6 +30,9 @@ create_server (u16 *proto_type)
   srand ((u32) time (&t));
 
   if (!(args = calloc (1, sizeof (connection_args_t))))
+    goto cleanup;
+
+  if (!(args->payload = calloc (1, MAX_PACKET_LEN)))
     goto cleanup;
 
   if (!(packet = calloc (1, MAX_PACKET_LEN)))
@@ -62,7 +64,7 @@ create_server (u16 *proto_type)
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
 
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-        build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT, 16, 16, 368, 0,
+        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
                             args);
         args->net_layer.ipv4->len += htons (52);
         args->net_layer.ipv4->checksum = 0;
@@ -72,8 +74,10 @@ create_server (u16 *proto_type)
 
         recv_filtered (args->eth->fd, if_ipv4_sctp, args);
 
-        build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT_ACK, 16, 16, 368, 0,
+        build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT_ACK, 1, 1, 368, 0,
                             args);
+        args->plen += 8;
+        args->net_layer.ipv4->len += htons (8);
         args->net_layer.ipv4->checksum = 0;
         args->net_layer.ipv4->checksum
             = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
@@ -89,8 +93,8 @@ create_server (u16 *proto_type)
     }
 
 cleanup:
+  free (args->payload);
   eth_close (eth);
   free (args);
   free (packet);
 }
-

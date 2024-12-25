@@ -2,11 +2,10 @@
 // Created by KiberPerdun on 06.12.2024.
 //
 
-#include "get_random.h"
 #include "if_packet.h"
 #include "sctp.h"
-#include <stdlib.h>
-#include <time.h>
+#include "get_random.h"
+
 
 bool
 build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args)
@@ -59,7 +58,7 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u
 
         sctp->fld.type = type;
         sctp->fld.flags = 0;
-        sctp->fld.len = htons (20);
+        sctp->fld.len = htons (20 + 8);
 
         sctp->type.init.a_rwnd = htonl (a_rwnd);
         args->sctp_connection.dst_ver_tag = get_random_u32 ();
@@ -71,6 +70,16 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u
         args->sctp_connection.self_mis = mis;
         sctp->type.init.os = htons (os);
         sctp->type.init.mis = htons (mis);
+
+        ((sctp_opt_t *)(sctp + 1))->type = htons (7);
+        ((sctp_opt_t *)(sctp + 1))->len = htons (8);
+
+
+        u32 cpc = generate_crc32c (args->payload, 20);
+        printf ("%u", cpc);
+        fflush (stdout);
+        memcpy (((u0 *)(sctp + 1)) + sizeof (sctp_opt_t), &cpc, 4);
+
 
         args->tp_layer.sctp->cmn.check =  (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
 

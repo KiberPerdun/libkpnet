@@ -43,6 +43,8 @@ typedef struct connection_args
 
     u16 dest_os;
     u16 dest_mis;
+
+    u64 hmac;
   } sctp_connection;
 
   union

@@ -1,0 +1,57 @@
+@startuml
+actor Client
+actor Server
+
+== Установление соединения ==
+
+Client -> Server: SYN
+note right: Клиент инициирует соединение.
+Server -> Client: SYN-ACK
+note left: Сервер подтверждает и отвечает.
+alt Ошибка в пакете SYN-ACK
+    Server -> Client: RST (Reset)
+    note left: Сервер сбрасывает соединение.
+    return
+end
+Client -> Server: ACK
+note right: Клиент подтверждает установление соединения.
+alt Ошибка в пакете ACK
+    Client -> Server: Повторный SYN
+    note right: Повторная попытка установить соединение.
+end
+
+== Соединение установлено ==
+
+== Обмен данными ==
+Client -> Server: Данные (Segment 1)
+Server -> Client: ACK (подтверждение Segment 1)
+alt Потеря ACK
+    Client -> Server: Повторная отправка Segment 1
+end
+
+Server -> Client: Данные (Segment 2)
+Client -> Server: ACK (подтверждение Segment 2)
+alt Потеря данных
+    Server -> Client: Повторная отправка Segment 2
+end
+
+loop Передача больших данных
+    Client -> Server: Следующий сегмент данных
+    Server -> Client: ACK
+end
+
+== Завершение соединения ==
+
+Client -> Server: FIN
+note right: Клиент запрашивает завершение соединения.
+Server -> Client: ACK
+Server -> Client: FIN
+note left: Сервер завершает соединение.
+Client -> Server: ACK
+note right: Клиент подтверждает завершение.
+
+== Ошибки при завершении ==
+alt Потеря ACK при завершении
+    Server -> Client: Повторная отправка FIN
+end
+@enduml
