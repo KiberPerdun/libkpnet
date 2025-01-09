@@ -44,7 +44,6 @@ create_client (u16 *proto_type)
   args->packet = packet;
   args->eth = eth;
   args->plen = 0;
-  args->SCTP_STATUS = SCTP_INIT_SENT;
   /* init end */
 
   build_mac_client_raw ("46:9e:59:1e:5a:86", "5a:50:12:f7:b0:f5",
@@ -66,6 +65,19 @@ create_client (u16 *proto_type)
         args->net_layer.ipv4->checksum
             = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
         args->plen += 32;
+
+        eth_send (args->eth, args->packet, args->plen);
+        args->SCTP_STATUS = SCTP_INIT_SENT;
+
+        recv_filtered (args->eth->fd, if_ipv4_sctp, args);
+
+        args->net_layer.ipv4->len = htons (40);
+        args->net_layer.ipv4->checksum = 0;
+        args->net_layer.ipv4->checksum
+            = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+        args->plen -= 12;
+        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_COOKIE_ECHO, 1, 1, 368, 0,
+                            args);
 
         eth_send (args->eth, args->packet, args->plen);
 

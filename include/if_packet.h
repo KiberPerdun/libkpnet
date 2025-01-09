@@ -68,11 +68,17 @@ typedef struct connection_args
     TCP_CLOSED = 11,
   } TCP_STATUS;
 
+  /* May better soon, maybe. */
   enum
   {
-    SCTP_LISTEN = 1,
-    SCTP_INIT_SENT = 2,
-    SCTP_INIT_RECIEVED = 3,
+    SCTP_LISTEN,
+    SCTP_INIT_SENT,
+    SCTP_INIT_RECEIVED,
+    SCTP_INIT_ACK_SENT,
+    SCTP_INIT_ACK_RECEIVED,
+    SCTP_COOKIE_RECEIVED,
+    SCTP_COOKIE_ECHO_SENT,
+    SCTP_COOKIE_ECHO_RECEIVED,
   } SCTP_STATUS;
 
   union

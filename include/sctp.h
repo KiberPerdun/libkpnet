@@ -44,6 +44,12 @@ typedef enum SCTP_ERROR_KIND
   SCTP_ERROR_PROTOCOL_VIOLATION                           = 13,
 } SCTP_ERROR_KIND_T;
 
+typedef struct sctp_opt
+{
+  u16 type;
+  u16 len;
+} sctp_opt_t;
+
 typedef struct sctp_common_hdr
 {
   u16 srcp;
@@ -83,6 +89,7 @@ typedef struct sctp_init_ack_hdr
   u16 os;
   u16 mis;
   u32 init_tsn;
+  sctp_opt_t cookie;
 } sctp_init_ack_hdr_t;
 
 typedef struct sctp_sack_hdr
@@ -159,16 +166,11 @@ typedef struct sctp_hdr
   {
     sctp_data_hdr_t data;
     sctp_sack_hdr_t sack;
-    sctp_init_ack_hdr_t init;
+    sctp_init_hdr_t init;
+    sctp_init_ack_hdr_t init_ack;
     sctp_shut_hdr_t shut;
   } type;
 } sctp_t;
-
-typedef struct sctp_opt
-{
-  u16 type;
-  u16 len;
-} sctp_opt_t;
 
 u32 generate_crc32c (const u8 *buffer, u32 length);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);

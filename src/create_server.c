@@ -73,16 +73,30 @@ create_server (u16 *proto_type)
         args->plen += 32;
 
         recv_filtered (args->eth->fd, if_ipv4_sctp, args);
+        if (args->SCTP_STATUS == SCTP_INIT_RECEIVED)
+          {
+            build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT_ACK, 1, 1,
+                                368, 0, args);
+            args->plen += 8;
+            args->net_layer.ipv4->len += htons (8);
+            args->net_layer.ipv4->checksum = 0;
+            args->net_layer.ipv4->checksum
+                = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+            eth_send (args->eth, args->packet, args->plen);
+            args->SCTP_STATUS = SCTP_INIT_ACK_SENT;
 
-        build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT_ACK, 1, 1, 368, 0,
-                            args);
-        args->plen += 8;
-        args->net_layer.ipv4->len += htons (8);
-        args->net_layer.ipv4->checksum = 0;
-        args->net_layer.ipv4->checksum
-            = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
-        eth_send (args->eth, args->packet, args->plen);
+            recv_filtered (args->eth->fd, if_ipv4_sctp, args);
 
+            build_sctp_hdr_raw (12345, 12345, rand (), SCTP_COOKIE_ACK, 1, 1,
+                                368, 0, args);
+
+            args->net_layer.ipv4->len = htons (36);
+            args->plen = 50;
+            args->net_layer.ipv4->checksum = 0;
+            args->net_layer.ipv4->checksum
+                = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+            eth_send (args->eth, args->packet, args->plen);
+          }
         break;
       }
     default:

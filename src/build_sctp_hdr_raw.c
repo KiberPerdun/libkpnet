@@ -60,33 +60,51 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u
         sctp->fld.flags = 0;
         sctp->fld.len = htons (20 + 8);
 
-        sctp->type.init.a_rwnd = htonl (a_rwnd);
+        sctp->type.init_ack.a_rwnd = htonl (a_rwnd);
         args->sctp_connection.dst_ver_tag = get_random_u32 ();
-        sctp->type.init.init_tag = htonl( args->sctp_connection.dst_ver_tag);
+        sctp->type.init_ack.init_tag = htonl( args->sctp_connection.dst_ver_tag);
         args->sctp_connection.src_tsn = get_random_u32 ();
-        sctp->type.init.init_tsn = htonl (args->sctp_connection.src_tsn);
+        sctp->type.init_ack.init_tsn = htonl (args->sctp_connection.src_tsn);
 
         args->sctp_connection.self_os = os;
         args->sctp_connection.self_mis = mis;
-        sctp->type.init.os = htons (os);
-        sctp->type.init.mis = htons (mis);
+        sctp->type.init_ack.os = htons (os);
+        sctp->type.init_ack.mis = htons (mis);
 
-        ((sctp_opt_t *)(sctp + 1))->type = htons (7);
-        ((sctp_opt_t *)(sctp + 1))->len = htons (8);
+        sctp->type.init_ack.cookie.type = htons (7);
+        sctp->type.init_ack.cookie.len = htons (8);
 
+        *(u32 *)(((u0 *)&(sctp->type.init_ack.cookie)) + 4) = generate_crc32c (args->payload, 20);
 
-        u32 cpc = generate_crc32c (args->payload, 20);
-        printf ("%u", cpc);
-        fflush (stdout);
-        memcpy (((u0 *)(sctp + 1)) + sizeof (sctp_opt_t), &cpc, 4);
-
-
-        args->tp_layer.sctp->cmn.check =  (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
+        args->tp_layer.sctp->cmn.check = (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
 
         break;
       }
-    case SCTP_DATA:
-      break;
+    case SCTP_COOKIE_ECHO:
+      {
+        sctp->cmn.tag = args->sctp_connection.src_ver_tag;
+
+        sctp->fld.type = type;
+        sctp->fld.flags = 0;
+        sctp->fld.len = htons (8);
+        sctp->type.data.tsn = args->sctp_connection.hmac;
+
+        args->tp_layer.sctp->cmn.check = (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
+
+        break;
+      }
+    case SCTP_COOKIE_ACK:
+      {
+        sctp->cmn.tag = args->sctp_connection.src_ver_tag;
+
+        sctp->fld.type = type;
+        sctp->fld.flags = 0;
+        sctp->fld.len = htons (4);
+
+        args->tp_layer.sctp->cmn.check = (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
+
+        break;
+      }
     case SCTP_SACK:
       break;
     case SCTP_HEARTBEAT:
@@ -101,9 +119,7 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u
       break;
     case SCTP_ERROR:
       break;
-    case SCTP_COOKIE_ECHO:
-      break;
-    case SCTP_COOKIE_ACK:
+    case SCTP_DATA:
       break;
     case SCTP_SHUTDOWN_COMPLETE:
       break;
