@@ -11,9 +11,9 @@ add_custom_target(run_with_sudo
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -v")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
-set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -v")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2")
 
 include_directories(

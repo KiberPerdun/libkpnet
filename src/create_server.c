@@ -38,8 +38,8 @@ create_server (u16 *proto_type)
   if (!(packet = calloc (1, MAX_PACKET_LEN)))
     goto cleanup;
 
-  dst_port = 12345;
-  src_port = 12345; /* 443 + rand () % 65000 */
+  dst_port = 123;
+  src_port = 12345;
 
   args->srcport = htons (src_port);
   args->dstport = htons (dst_port);
@@ -64,7 +64,7 @@ create_server (u16 *proto_type)
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
 
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
+        build_sctp_hdr_raw (src_port, dst_port, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
                             args);
         args->net_layer.ipv4->len += htons (52);
         args->net_layer.ipv4->checksum = 0;
@@ -75,7 +75,7 @@ create_server (u16 *proto_type)
         recv_filtered (args->eth->fd, if_ipv4_sctp, args);
         if (args->SCTP_STATUS == SCTP_INIT_RECEIVED)
           {
-            build_sctp_hdr_raw (12345, 12345, rand (), SCTP_INIT_ACK, 1, 1,
+            build_sctp_hdr_raw (src_port, dst_port, rand (), SCTP_INIT_ACK, 1, 1,
                                 368, 0, args);
             args->plen += 8;
             args->net_layer.ipv4->len += htons (8);
@@ -87,7 +87,7 @@ create_server (u16 *proto_type)
 
             recv_filtered (args->eth->fd, if_ipv4_sctp, args);
 
-            build_sctp_hdr_raw (12345, 12345, rand (), SCTP_COOKIE_ACK, 1, 1,
+            build_sctp_hdr_raw (src_port, dst_port, rand (), SCTP_COOKIE_ACK, 1, 1,
                                 368, 0, args);
 
             args->net_layer.ipv4->len = htons (36);

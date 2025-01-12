@@ -160,8 +160,8 @@ typedef struct sctp_error
 
 typedef struct sctp_hdr
 {
-  sctp_common_hdr_t cmn;
-  sctp_chunk_fld_t fld;
+  sctp_common_hdr_t cmn; /* 12 */
+  sctp_chunk_fld_t fld;  /* 4  */
   union
   {
     sctp_data_hdr_t data;

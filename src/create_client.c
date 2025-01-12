@@ -36,7 +36,7 @@ create_client (u16 *proto_type)
     goto cleanup;
 
   dst_port = 12345;
-  src_port = 12345; /* 443 + rand () % 65000 */
+  src_port = 123;
 
   args->srcport = htons (src_port);
   args->dstport = htons (dst_port);
@@ -58,7 +58,7 @@ create_client (u16 *proto_type)
     case (IPPROTO_SCTP):
       {
         args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
+        build_sctp_hdr_raw (src_port, dst_port, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
                             args);
         args->net_layer.ipv4->len += htons (52);
         args->net_layer.ipv4->checksum = 0;
@@ -76,7 +76,7 @@ create_client (u16 *proto_type)
         args->net_layer.ipv4->checksum
             = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
         args->plen -= 12;
-        build_sctp_hdr_raw (12345, 12345, get_random_u32 (), SCTP_COOKIE_ECHO, 1, 1, 368, 0,
+        build_sctp_hdr_raw (src_port, dst_port, get_random_u32 (), SCTP_COOKIE_ECHO, 1, 1, 368, 0,
                             args);
 
         eth_send (args->eth, args->packet, args->plen);
