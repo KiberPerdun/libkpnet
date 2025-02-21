@@ -48,6 +48,7 @@ create_server (u16 *proto_type)
   args->eth = eth;
   args->plen = 0;
   args->SCTP_STATUS = SCTP_LISTEN;
+  args->sctp_connection.errors = NULL;
   /* init end */
 
   build_mac_client_raw ("5a:50:12:f7:b0:f5", "46:9e:59:1e:5a:86",
@@ -67,8 +68,8 @@ create_server (u16 *proto_type)
         build_sctp_hdr_raw (src_port, dst_port, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
                             args);
         args->net_layer.ipv4->len += htons (52);
-        args->net_layer.ipv4->checksum = 0;
-        args->net_layer.ipv4->checksum
+        args->net_layer.ipv4->check = 0;
+        args->net_layer.ipv4->check
             = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
         args->plen += 32;
 
@@ -79,8 +80,8 @@ create_server (u16 *proto_type)
                                 368, 0, args);
             args->plen += 8;
             args->net_layer.ipv4->len += htons (8);
-            args->net_layer.ipv4->checksum = 0;
-            args->net_layer.ipv4->checksum
+            args->net_layer.ipv4->check = 0;
+            args->net_layer.ipv4->check
                 = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
             eth_send (args->eth, args->packet, args->plen);
             args->SCTP_STATUS = SCTP_INIT_ACK_SENT;
@@ -92,8 +93,8 @@ create_server (u16 *proto_type)
 
             args->net_layer.ipv4->len = htons (36);
             args->plen = 50;
-            args->net_layer.ipv4->checksum = 0;
-            args->net_layer.ipv4->checksum
+            args->net_layer.ipv4->check = 0;
+            args->net_layer.ipv4->check
                 = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
             eth_send (args->eth, args->packet, args->plen);
           }

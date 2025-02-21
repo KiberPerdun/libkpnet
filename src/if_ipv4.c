@@ -3,6 +3,7 @@
 //
 
 #include "if_packet.h"
+#include "mac.h"
 
 bool
 if_ipv4 (u0 *packet, u64 size, connection_args_t *args)

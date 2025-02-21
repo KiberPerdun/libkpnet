@@ -87,6 +87,7 @@ fill_ipv4 (u32 src, u32 dst, u8 proto, u0 *ars)
       return false;
     }
 
+  /*
   hdr->ihl = 5;
   hdr->ver = 4;
   hdr->tos = htons (0x2);
@@ -98,6 +99,7 @@ fill_ipv4 (u32 src, u32 dst, u8 proto, u0 *ars)
   hdr->src_addr = src;
   hdr->dest_addr = dst;
   hdr->checksum = 0;
+  */
 
   args->net_layer.ipv4 = args->packet + args->plen;
   memcpy (args->net_layer.ipv4, hdr, sizeof (ipv4_t));

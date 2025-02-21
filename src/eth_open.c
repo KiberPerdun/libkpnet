@@ -1,4 +1,4 @@
-#include "eth.h"
+#include "if_packet.h"
 
 size_t
 _strlcpy(dst, src, siz)

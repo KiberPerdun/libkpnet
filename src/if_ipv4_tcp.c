@@ -4,6 +4,7 @@
 
 #include "if_packet.h"
 
+/*
 bool
 if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args)
 {
@@ -13,3 +14,4 @@ if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args)
 
   return false;
 }
+*/

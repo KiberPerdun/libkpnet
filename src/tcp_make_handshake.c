@@ -5,6 +5,7 @@
 #include "tcp.h"
 #include "if_packet.h"
 
+/*
 u0
 tcp_make_handshake (u0 *ars)
 {
@@ -32,3 +33,4 @@ tcp_make_handshake (u0 *ars)
     args->TCP_STATUS = TCP_ESTABLISHED_CONNECTON;
 
 }
+*/

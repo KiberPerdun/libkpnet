@@ -5,20 +5,22 @@
 #include "tcp.h"
 #include "if_packet.h"
 
-u0 *
-build_tcp_raw (u32 seq, u32 ack, u16 flags,
-               u16 win, u16 urgent, u8 optlen, u0 *options, u0 *ars)
+frame_data_t *
+build_tcp_raw (frame_data_t *frame, u16 srcp, u16 dstp, u32 seq, u32 ack, u16 flags,
+               u16 win, u16 urgent, u8 optlen)
 {
-  connection_args_t *args;
+  if (frame->plen < sizeof (tcp_t) | NULL == frame->packet)
+    {
+      frame->plen = 0;
+      return frame;
+    }
+
   tcp_t *hdr;
 
-  args = ars;
+  hdr = frame->packet;
 
-  if (!(hdr = malloc (sizeof (tcp_t) + optlen)))
-    return NULL;
-
-  hdr->srcp = args->srcport;
-  hdr->dstp = args->dstport;
+  hdr->srcp = srcp;
+  hdr->dstp = dstp;
   hdr->check = 0;
   hdr->urgent = htons (urgent);
   hdr->win = htons (win);
@@ -26,5 +28,8 @@ build_tcp_raw (u32 seq, u32 ack, u16 flags,
   hdr->seq = htonl (seq);
   hdr->ack = htonl (ack);
 
-  return hdr;
+  frame->packet += sizeof (tcp_t);
+  frame->plen -= sizeof (tcp_t);
+
+  return frame;
 }

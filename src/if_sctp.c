@@ -97,7 +97,22 @@ if_sctp (u0 *packet, u64 size, connection_args_t *args)
               return false;
 
             if (pck->type.data.tsn != args->sctp_connection.hmac)
-              return false;
+              {
+                node_t *node = args->sctp_connection.errors;
+
+                if (NULL == node)
+                    args->sctp_connection.errors = node = malloc (sizeof (node_t));
+
+                else
+                  {
+                    for (; NULL != (node = node->next);)
+                      ;
+                    node = node->next = malloc (sizeof (node_t));
+                  }
+
+                node->data = SCTP_ERROR_STALE_COOKIE;
+                node->next = NULL;
+              }
 
             return true;
           }

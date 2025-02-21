@@ -36,6 +36,14 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         get_random_u32.c
         get_random_u64.c
         get_random.c
+        ../include/checks.h
+        fix_check.c
+        fix_check_ip_tcp.c
+        build_mac.c
+        build_ip_raw.c
+        build_mac_raw.c
+        fix_check_ip.c
+        get_random_u16.c
 )
 
 add_executable(src ${SOURCES})

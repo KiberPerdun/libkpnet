@@ -5,6 +5,7 @@
 #include "tcp.h"
 #include "if_packet.h"
 
+/*
 bool
 build_tcp_payload_hdr (u0 *_args)
 {
@@ -48,3 +49,4 @@ build_tcp_payload_hdr (u0 *_args)
 
   return true;
 }
+*/

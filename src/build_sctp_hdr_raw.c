@@ -8,7 +8,8 @@
 
 
 bool
-build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args)
+build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os,
+                    u16 mis, u32 a_rwnd, u8 flags, u0 *_args)
 {
   connection_args_t *args;
   sctp_t *sctp;
@@ -108,7 +109,10 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u
     case SCTP_SHUTDOWN_ACK:
       break;
     case SCTP_ERROR:
-      break;
+      {
+        if (NULL == args->sctp_connection.errors)
+          return false;
+      }
     case SCTP_DATA:
       break;
     case SCTP_SHUTDOWN_COMPLETE:

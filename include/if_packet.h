@@ -5,15 +5,75 @@
 #ifndef LIBKPNET_IF_PACKET_H
 #define LIBKPNET_IF_PACKET_H
 
-#include "if_packet.h"
+#include "types.h"
+
+#define MAX_PACKET_LEN 1516
+
+typedef struct node {
+  u16 data;
+  struct node *next;
+} node_t;
+
+/* L2 -> ? -> L3 -> ? -> ... -> [payload]<fragmented data><signaling> -> aee */
+typedef enum PROTO_STACK_TYPE
+{
+  PROTO_STACK_MAC80211_IP_TCP,
+  PROTO_STACK_MAC80211_IP_SCTP,
+  PROTO_STACK_MAC8023_IP_TCP,
+  PROTO_STACK_MAC8023_IP_SCTP,
+  PROTO_STACK_IP_TCP,
+  PROTO_STACK_IP_SCTP,
+  PROTO_STACK_IP_UDP,
+  PROTO_STACK_TCP_RAW,
+  PROTO_STACK_TCP,
+  PROTO_STACK_IP_RAW,
+  PROTO_STACK_IP,
+  PROTO_STACK_ARP,
+} PROTO_STACK_TYPE_T;
+
+typedef struct frame_data
+{
+  u0 *packet;
+  u16 plen;
+  PROTO_STACK_TYPE_T proto;
+  u0 *sync;
+} frame_data_t;
+
+#include <stdbool.h>
+#include <linux/if_ether.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include "mac.h"
+#include "tcp.h"
 #include "ipv4.h"
 #include "ipv6.h"
 #include "stdbool.h"
-#include "tcp.h"
-#include "types.h"
 #include "udp.h"
+#include "eth.h"
 
-#define MAX_PACKET_LEN 1516
+typedef struct ipv4_hdr {
+#if __BYTE_ORDER__ == __LITTLE_ENDIAN
+  u8  ihl:4;
+  u8  ver:4;
+#endif
+#if __BYTE_ORDER__ == __BIG_ENDIAN__
+  u8  ver:4;
+  u8  ihl:4;
+#endif
+
+  u8  tos;
+  u16 len;
+
+  u16 indent;
+  u16 offset;
+
+  u8  ttl;
+  u8  proto;
+  u16 check;
+  u32 src_addr;
+  u32 dest_addr;
+} ipv4_t;
 
 typedef struct connection_args
 {
@@ -45,6 +105,9 @@ typedef struct connection_args
     u16 dest_mis;
 
     u64 hmac;
+
+    /* Error */
+    node_t *errors;
   } sctp_connection;
 
   union
@@ -83,7 +146,7 @@ typedef struct connection_args
 
   union
   {
-    tcp_t *tcp;
+    /* tcp_t *tcp; */
     udp_t *udp;
     sctp_t *sctp;
   } tp_layer;

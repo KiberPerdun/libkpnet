@@ -5,6 +5,7 @@
 #include "tcp.h"
 #include "if_packet.h"
 
+/*
 bool
 build_tcp_init_hdr (u0 *ars)
 {
@@ -64,3 +65,4 @@ build_tcp_init_hdr (u0 *ars)
 
   return true;
 }
+*/

@@ -4,7 +4,7 @@
 
 #include "tcp.h"
 #include "if_packet.h"
-
+/*
 bool
 build_tcp_ack_hdr (u0 *ars)
 {
@@ -12,7 +12,7 @@ build_tcp_ack_hdr (u0 *ars)
   u0 *hdr;
 
   args = ars;
-  /* 0x10 */
+  0x10
   if (!(hdr
         = build_tcp_raw (ntohl (args->tp_layer.tcp->seq), ntohl (args->tp_layer.tcp->ack += htonl (1)), 0x10, 64240, 0, 0, NULL, args)))
     return false;
@@ -45,3 +45,4 @@ build_tcp_ack_hdr (u0 *ars)
 
   return true;
 }
+*/

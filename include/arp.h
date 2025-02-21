@@ -5,7 +5,7 @@
 #ifndef LIBKPNET_ARP_H
 #define LIBKPNET_ARP_H
 
-#include "eth.h"
+#include "mac.h"
 #include "types.h"
 
 #define ARP_HDR_LEN 8    /* base ARP header length */

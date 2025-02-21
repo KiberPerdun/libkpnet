@@ -1,4 +1,5 @@
 #include "eth.h"
+#include "mac.h"
 
 ssize_t
 eth_send (eth_t *eth, u8 *buf, u64 len)

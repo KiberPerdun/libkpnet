@@ -5,17 +5,10 @@
 #ifndef LIBKPNET_ETH_H
 #define LIBKPNET_ETH_H
 
-#include "mac.h"
 #include "types.h"
-#include <linux/if_ether.h>
 #include <malloc.h>
 #include <net/if.h>
-#include <netinet/in.h>
 #include <netpacket/packet.h>
-#include <stddef.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 
 typedef struct eth_handle
 {
