@@ -2,7 +2,9 @@
 // Created by KiberPerdun on 11.12.2024.
 //
 
+#include "checks.h"
 #include "eth.h"
+#include "get_random.h"
 #include "if_packet.h"
 #include "ipv4.h"
 #include "types.h"
@@ -12,8 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "get_random.h"
-
 
 u0 *
 create_server (u16 *proto_type)
@@ -70,7 +70,7 @@ create_server (u16 *proto_type)
         args->net_layer.ipv4->len += htons (52);
         args->net_layer.ipv4->check = 0;
         args->net_layer.ipv4->check
-            = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+            = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
         args->plen += 32;
 
         recv_filtered (args->eth->fd, if_ipv4_sctp, args);
@@ -82,7 +82,7 @@ create_server (u16 *proto_type)
             args->net_layer.ipv4->len += htons (8);
             args->net_layer.ipv4->check = 0;
             args->net_layer.ipv4->check
-                = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+                = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
             eth_send (args->eth, args->packet, args->plen);
             args->SCTP_STATUS = SCTP_INIT_ACK_SENT;
 
@@ -95,7 +95,7 @@ create_server (u16 *proto_type)
             args->plen = 50;
             args->net_layer.ipv4->check = 0;
             args->net_layer.ipv4->check
-                = in_check ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
+                = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
             eth_send (args->eth, args->packet, args->plen);
           }
         break;

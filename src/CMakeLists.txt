@@ -44,6 +44,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         build_mac_raw.c
         fix_check_ip.c
         get_random_u16.c
+        ip_checksum.c
 )
 
 add_executable(src ${SOURCES})

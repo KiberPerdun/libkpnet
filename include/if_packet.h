@@ -31,6 +31,12 @@ typedef enum PROTO_STACK_TYPE
   PROTO_STACK_ARP,
 } PROTO_STACK_TYPE_T;
 
+typedef struct frame_sync_ip_tcp
+{
+  u32 ip_check_part;
+  u32 tcp_check_part;
+} frame_sync_ip_tcp_t;
+
 typedef struct frame_data
 {
   u0 *packet;

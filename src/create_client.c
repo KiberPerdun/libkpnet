@@ -39,7 +39,7 @@ create_client (u16 *proto_type)
 
   eth = eth_open ("wlan0-peer");
 
-  dst_port = 80;
+  dst_port = htons (80);
   src_port = get_random_u16 ();
 
   /* init end */
@@ -50,6 +50,12 @@ create_client (u16 *proto_type)
     {
     case (IPPROTO_TCP):
       {
+        frame_sync_ip_tcp_t *frm_sync_tcpip = calloc (1, sizeof (frame_sync_ip_tcp_t));
+        if (NULL == frm_sync_tcpip)
+          return 0;
+
+        frame->sync = frm_sync_tcpip;
+
         frame =
           fix_check_ip_tcp (
           build_tcp_raw (
@@ -61,6 +67,8 @@ create_client (u16 *proto_type)
 
         eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
+
+        free (frm_sync_tcpip);
         break;
       }
     default:
