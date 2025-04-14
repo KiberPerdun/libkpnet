@@ -2,7 +2,7 @@
 // Created by KiberPerdun on 11.12.2024.
 //
 
-#include "sctp.h"
+#include "if_packet.h"
 #include <string.h>
 
 /* https://datatracker.ietf.org/doc/html/rfc9260#name-crc32c-checksum-calculation-2 */
@@ -37,7 +37,7 @@ generate_crc32c (const u8 *data, u32 length) {
       );
     }
 
-  return ~((u32)crc);
+  return ~(u32)crc;
 }
 #else
 

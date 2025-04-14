@@ -19,4 +19,3 @@ fix_check_ip (frame_data_t *frame, u16 opt_len)
 
   return frame;
 }
-

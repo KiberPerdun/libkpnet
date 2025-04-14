@@ -4,8 +4,8 @@
 
 #ifndef LIBKPNET_UDP_H
 #define LIBKPNET_UDP_H
-#include "sctp.h"
-#include "types.h"
+
+#include "if_packet.h"
 
 typedef struct udp_hdr
 {

@@ -9,6 +9,19 @@
 #include "types.h"
 #include <netinet/in.h>
 #include "stdbool.h"
+#include "if_packet.h"
+
+typedef enum SCTP_STATUS
+{
+  SCTP_LISTEN,
+  SCTP_INIT_SENT,
+  SCTP_INIT_RECEIVED,
+  SCTP_INIT_ACK_SENT,
+  SCTP_INIT_ACK_RECEIVED,
+  SCTP_COOKIE_RECEIVED,
+  SCTP_COOKIE_ECHO_SENT,
+  SCTP_COOKIE_ECHO_RECEIVED,
+} SCTP_STATUS_T;
 
 typedef enum SCTP_HDR_TYPE
 {
@@ -56,7 +69,7 @@ typedef struct sctp_common_hdr
   u16 dstp;
   u32 tag;
   u32 check;
-} sctp_common_hdr_t;
+} sctp_cmn_hdr_t;
 
 typedef struct sctp_chunk_fld
 {
@@ -160,7 +173,7 @@ typedef struct sctp_error
 
 typedef struct sctp_hdr
 {
-  sctp_common_hdr_t cmn; /* 12 */
+  sctp_cmn_hdr_t cmn; /* 12 */
   sctp_chunk_fld_t fld;  /* 4  */
   union
   {
@@ -174,5 +187,8 @@ typedef struct sctp_hdr
 
 u32 generate_crc32c (const u8 *buffer, u32 length);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);
+frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag);
+frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len);
+frame_data_t *build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
 
 #endif // LIBKPNET_SCTP_H

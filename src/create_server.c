@@ -7,96 +7,97 @@
 #include "get_random.h"
 #include "if_packet.h"
 #include "ipv4.h"
+#include "tcp.h"
 #include "types.h"
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 #include <time.h>
+
+#include <linux/if_tun.h>
 
 u0 *
 create_server (u16 *proto_type)
 {
   /* init */
-  connection_args_t *args;
   u0 *packet = NULL;
   eth_t *eth;
   u16 src_port, dst_port;
+  frame_data_t *frame;
 
-  eth = eth_open ("wlan0-virt");
-
-  time_t t;
-  srand ((u32) time (&t));
-
-  if (!(args = calloc (1, sizeof (connection_args_t))))
-    goto cleanup;
-
-  if (!(args->payload = calloc (1, MAX_PACKET_LEN)))
+  if (!(frame = malloc (sizeof (frame_data_t))))
     goto cleanup;
 
   if (!(packet = calloc (1, MAX_PACKET_LEN)))
     goto cleanup;
 
-  dst_port = 123;
-  src_port = 12345;
+  frame->packet = packet;
+  frame->plen = MAX_PACKET_LEN;
+  frame->proto = PROTO_STACK_IP_TCP;
 
-  args->srcport = htons (src_port);
-  args->dstport = htons (dst_port);
-  args->proto = IPPROTO_SCTP;
-  args->packet = packet;
-  args->eth = eth;
-  args->plen = 0;
-  args->SCTP_STATUS = SCTP_LISTEN;
-  args->sctp_connection.errors = NULL;
+  eth = eth_open ("wlan0-virt");
+
+  dst_port = htons (80);
+  src_port = get_random_u16 ();
+
+  volatile u32 src_ip = inet_addr ("192.168.1.3");
+  setup_bpf_filter (eth->fd, *proto_type, *proto_type);
+
   /* init end */
-
-  build_mac_client_raw ("5a:50:12:f7:b0:f5", "46:9e:59:1e:5a:86",
-                        ETHERTYPE_IP, args);
 
   /* FIN ACK 0x011 */
 
-  fill_ipv4 (inet_addr ("192.168.1.3"), inet_addr ("192.168.1.2"), *proto_type, args);
-
   switch (*proto_type)
     {
-    case (IPPROTO_SCTP):
+    case IPPROTO_TCP:
       {
-        args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
+        frame_sync_ip_tcp_t *frm_sync_tcpip
+            = calloc (1, sizeof (frame_sync_ip_tcp_t));
+        if (NULL == frm_sync_tcpip)
+          return 0;
 
-        args->tp_layer.sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-        build_sctp_hdr_raw (src_port, dst_port, get_random_u32 (), SCTP_INIT, 1, 1, 368, 0,
-                            args);
-        args->net_layer.ipv4->len += htons (52);
-        args->net_layer.ipv4->check = 0;
-        args->net_layer.ipv4->check
-            = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
-        args->plen += 32;
+        frame->sync = frm_sync_tcpip;
 
-        recv_filtered (args->eth->fd, if_ipv4_sctp, args);
-        if (args->SCTP_STATUS == SCTP_INIT_RECEIVED)
+        switch (setjmp (frame->jmpbuf))
           {
-            build_sctp_hdr_raw (src_port, dst_port, rand (), SCTP_INIT_ACK, 1, 1,
-                                368, 0, args);
-            args->plen += 8;
-            args->net_layer.ipv4->len += htons (8);
-            args->net_layer.ipv4->check = 0;
-            args->net_layer.ipv4->check
-                = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
-            eth_send (args->eth, args->packet, args->plen);
-            args->SCTP_STATUS = SCTP_INIT_ACK_SENT;
+          case 0:
+            {
+              frame = fix_check_ip_tcp (
+                  build_tcp_raw (
+                      build_ip_raw (build_mac_raw (frame, "5a:50:12:f7:b0:f5",
+                                                   "wlan0-peer", ETHERTYPE_IP),
+                                    src_ip, inet_addr ("192.168.1.2"),
+                                    *proto_type),
+                      src_port, dst_port, get_random_u32 (), 0, 0x2, (u16)-1,
+                      0, NULL),
+                  MAX_PACKET_LEN);
 
-            recv_filtered (args->eth->fd, if_ipv4_sctp, args);
+              eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
-            build_sctp_hdr_raw (src_port, dst_port, rand (), SCTP_COOKIE_ACK, 1, 1,
-                                368, 0, args);
+              free (frm_sync_tcpip);
+              break;
+            }
+          case -1:
+            return 0;
+          default:;
+          }
 
-            args->net_layer.ipv4->len = htons (36);
-            args->plen = 50;
-            args->net_layer.ipv4->check = 0;
-            args->net_layer.ipv4->check
-                = ip_checksum ((u16 *)(args->net_layer.ipv4), sizeof (ipv4_t));
-            eth_send (args->eth, args->packet, args->plen);
+        break;
+      }
+    case PROTO_SCTP:
+      {
+        switch (setjmp (frame->jmpbuf))
+          {
+          case 0:
+            {
+              recv_packet (eth->fd, NULL);
+
+              break;
+            }
+          default:break;
           }
         break;
       }
@@ -108,8 +109,7 @@ create_server (u16 *proto_type)
     }
 
 cleanup:
-  free (args->payload);
   eth_close (eth);
-  free (args);
   free (packet);
+  free (frame);
 }

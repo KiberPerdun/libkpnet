@@ -18,7 +18,7 @@ if_sctp (u0 *packet, u64 size, connection_args_t *args)
    */
 
   printf ("%d\n", size);
-  if (sizeof (sctp_common_hdr_t) + sizeof (sctp_chunk_fld_t) > size)
+  if (sizeof (sctp_cmn_hdr_t) + sizeof (sctp_chunk_fld_t) > size)
     return false;
 
   pck = packet;

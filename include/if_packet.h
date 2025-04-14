@@ -37,12 +37,21 @@ typedef struct frame_sync_ip_tcp
   u32 tcp_check_part;
 } frame_sync_ip_tcp_t;
 
+typedef struct connection_ip_tcp_state
+{
+  u8 cock;
+} connection_ip_tcp_state_t;
+
+#include <setjmp.h>
+
 typedef struct frame_data
 {
   u0 *packet;
   u16 plen;
   PROTO_STACK_TYPE_T proto;
+  jmp_buf jmpbuf;
   u0 *sync;
+  u0 *state;
 } frame_data_t;
 
 #include <stdbool.h>
@@ -57,6 +66,12 @@ typedef struct frame_data
 #include "stdbool.h"
 #include "udp.h"
 #include "eth.h"
+#include <linux/io_uring.h>
+#include <linux/filter.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include "sctp.h"
 
 typedef struct ipv4_hdr {
 #if __BYTE_ORDER__ == __LITTLE_ENDIAN
@@ -80,6 +95,11 @@ typedef struct ipv4_hdr {
   u32 src_addr;
   u32 dest_addr;
 } ipv4_t;
+
+typedef struct connection_ip_sctp_state
+{
+  SCTP_STATUS_T status;
+} connection_ip_sctp_state_t;
 
 typedef struct connection_args
 {
@@ -138,17 +158,7 @@ typedef struct connection_args
   } TCP_STATUS;
 
   /* May better soon, maybe. */
-  enum
-  {
-    SCTP_LISTEN,
-    SCTP_INIT_SENT,
-    SCTP_INIT_RECEIVED,
-    SCTP_INIT_ACK_SENT,
-    SCTP_INIT_ACK_RECEIVED,
-    SCTP_COOKIE_RECEIVED,
-    SCTP_COOKIE_ECHO_SENT,
-    SCTP_COOKIE_ECHO_RECEIVED,
-  } SCTP_STATUS;
+  SCTP_STATUS_T SCTP_STATUS;
 
   union
   {
@@ -158,13 +168,23 @@ typedef struct connection_args
   } tp_layer;
 } connection_args_t;
 
-typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
+typedef struct if_ip_sctp_meta
+{
+  connection_ip_sctp_state_t state;
+  u32 src_ip;
+  u32 dst_ip;
+} if_ip_sctp_meta_t;
 
+typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
+typedef u0*   (*ifcall)(u0 *, u16, u0 *, u0 *);
+
+u0   recv_packet (i32 fd, ifcall filter);
 u0   recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
 bool if_ipv4 (u0 *packet, u64 size, connection_args_t *args);
 bool if_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_sctp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
-
+u0   if_ip_tcp (u0 *packet, u16 size);
+u0*  if_ip_sctp (u0 *packet, u16 size, u0 *meta);
 #endif // LIBKPNET_IF_PACKET_H

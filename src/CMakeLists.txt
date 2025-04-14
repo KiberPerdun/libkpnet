@@ -45,6 +45,15 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         fix_check_ip.c
         get_random_u16.c
         ip_checksum.c
+        ../include/dhcp.h
+        build_tcp_opt_mss.c
+        build_sctp_cmn_hdr_raw.c
+        build_sctp_init_hdr.c
+        build_sctp_fld_hdr_raw.c
+        fix_check_ip_sctp.c
+        setup_bpf_filter.c
+        recv_packet.c
+        if_ip_sctp.c
 )
 
 add_executable(src ${SOURCES})

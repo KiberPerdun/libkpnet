@@ -19,7 +19,6 @@ fix_check_ip_tcp (frame_data_t *frame, u16 frm_max_len)
   tcp = packet + sizeof (ipv4_t);
   ip = packet;
 
-
   if (frame->sync)
     {
       u32 chk = ((frame_sync_ip_tcp_t *)frame->sync)->ip_check_part + ip->len;
@@ -40,12 +39,14 @@ fix_check_ip_tcp (frame_data_t *frame, u16 frm_max_len)
   psh.protocol = IPPROTO_TCP;
   psh.tcp_length = htons (sizeof (tcp_t));
 
-  u8 *buffer
-      = malloc (sizeof (pseudo_t) + sizeof (tcp_t));
-  memcpy (buffer, &psh, sizeof (pseudo_t));
-  memcpy (buffer + sizeof (pseudo_t), tcp, (ntohs (tcp->flags) >> 12 & 0XF) * 4);
+  u8 offset;
+  offset = (ntohs (tcp->flags) >> 12 & 0XF) * 4;
 
-  tcp->check = tcp_checksum ((u16 *) buffer, sizeof (pseudo_t) + sizeof (tcp_t));
+  u8 *buffer = malloc (sizeof (pseudo_t) + offset);
+  memcpy (buffer, &psh, sizeof (pseudo_t));
+  memcpy (buffer + sizeof (pseudo_t), tcp, offset);
+
+  tcp->check = tcp_checksum ((u16 *) buffer, sizeof (pseudo_t) + offset);
 
   free (buffer);
 

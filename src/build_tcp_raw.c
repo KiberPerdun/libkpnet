@@ -7,7 +7,7 @@
 
 frame_data_t *
 build_tcp_raw (frame_data_t *frame, u16 srcp, u16 dstp, u32 seq, u32 ack, u16 flags,
-               u16 win, u16 urgent, u8 optlen)
+               u16 win, u16 urgent, optcall_t opts)
 {
   if (frame->plen < sizeof (tcp_t) | NULL == frame->packet)
     {
@@ -24,12 +24,12 @@ build_tcp_raw (frame_data_t *frame, u16 srcp, u16 dstp, u32 seq, u32 ack, u16 fl
   hdr->check = 0;
   hdr->urgent = htons (urgent);
   hdr->win = htons (win);
-  hdr->flags = htons ((5 + (optlen / 4)) << 12 | flags);
+  hdr->flags = htons ((5 + (0 /* optlen */ / 4)) << 12 | flags);
   hdr->seq = htonl (seq);
   hdr->ack = htonl (ack);
 
   frame->packet += sizeof (tcp_t);
   frame->plen -= sizeof (tcp_t);
-
+  
   return frame;
 }

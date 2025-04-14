@@ -14,28 +14,30 @@
 #include "sys/mman.h"
 #include "linux/if_tun.h"
 #include "linux/if.h"
+#include "threads.h"
+#include "linux/xdp_diag.h"
+#include "linux/if_xdp.h"
+
+#include "dhcp.h"
 
 i32
 main (u0)
 {
   pthread_t client, server;
-  u16 proto = IPPROTO_TCP;
+  u16 proto = IPPROTO_SCTP;
 
-  printf ("%lu", sizeof (u0 *));
+  printf ("%lu", sizeof (dhcp_t));
 
   if (pthread_create (&client, NULL, (void *(*)(void *)) create_client, &proto) != 0)
     return 0;
 
-  /*
   if (pthread_create (&server, NULL, (void *(*)(void *)) create_server, &proto) != 0)
     return 0;
-    */
 
   if (pthread_join (client, NULL) != 0)
     return 0;
 
-  return 0;
-
   if (pthread_join (server, NULL) != 0)
     return 0;
+
 }

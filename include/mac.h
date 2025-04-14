@@ -15,6 +15,6 @@ typedef struct mac_hdr
 
 bool build_mac_client_raw (const u8 *gateway, const u8 *self, u16 typelen, u0 *args);
 mac_t *mac_client_fill_hdr (u16 typelen);
-frame_data_t *build_mac_raw (frame_data_t *frame, u0 *gateway, u0 *self, u16 typelen);
+frame_data_t *build_mac_raw (volatile frame_data_t *frame, u0 *gateway, const char *dev, u16 typelen);
 
 #endif // LIBKPNET_MAC_H
