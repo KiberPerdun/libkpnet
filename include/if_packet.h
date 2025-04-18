@@ -170,15 +170,15 @@ typedef struct connection_args
 
 typedef struct if_ip_sctp_meta
 {
-  connection_ip_sctp_state_t state;
+  int state;
   u32 src_ip;
   u32 dst_ip;
 } if_ip_sctp_meta_t;
 
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
-typedef u0*   (*ifcall)(u0 *, u16, u0 *, u0 *);
+typedef u0*   (*ifcall)(u0 *, u16, u0 *);
 
-u0   recv_packet (i32 fd, ifcall filter);
+u0   recv_packet (i32 fd, ifcall filter, u0 *meta);
 u0   recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
 bool if_ipv4 (u0 *packet, u64 size, connection_args_t *args);
 bool if_tcp (u0 *packet, u64 size, connection_args_t *args);

@@ -27,6 +27,7 @@ size_t siz;
   return(s - src - 1);
 }
 
+/* TODO: AF_XDP socket */
 eth_t *
 eth_open (const char *device)
 {

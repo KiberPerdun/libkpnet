@@ -6,8 +6,6 @@
 #include "eth.h"
 #include "get_random.h"
 #include "if_packet.h"
-#include "ipv4.h"
-#include "tcp.h"
 #include "types.h"
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -89,16 +87,23 @@ create_server (u16 *proto_type)
       }
     case PROTO_SCTP:
       {
+        if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
+        meta->state = SCTP_LISTEN;
+        meta->src_ip = src_ip;
+
         switch (setjmp (frame->jmpbuf))
           {
           case 0:
             {
-              recv_packet (eth->fd, NULL);
+              recv_packet (eth->fd, if_ip_sctp, meta);
+
+              printf ("\n\n%d", meta->state);
 
               break;
             }
           default:break;
           }
+        free (meta);
         break;
       }
     default:
