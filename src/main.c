@@ -24,7 +24,7 @@ i32
 main (u0)
 {
   pthread_t client, server;
-  u16 proto = IPPROTO_SCTP;
+  u16 proto = IPPROTO_TCP;
 
   printf ("%lu", sizeof (dhcp_t));
 

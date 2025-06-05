@@ -27,6 +27,7 @@ create_client (u16 *proto_type)
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
+  frame_data_t *frame_call;
 
   if (!(frame = malloc (sizeof (frame_data_t))))
     goto cleanup;
@@ -59,6 +60,11 @@ create_client (u16 *proto_type)
         if (NULL == frm_sync_tcpip)
           return 0;
 
+        if_ip_tcp_meta_t *meta = calloc (sizeof (if_ip_tcp_meta_t), 1);
+        meta->state = TCP_SYN_SENT;
+        meta->src_ip = src_ip;
+        meta->src_port = src_port;
+
         frame->sync = frm_sync_tcpip;
 
         switch (setjmp (frame->jmpbuf))
@@ -71,13 +77,31 @@ create_client (u16 *proto_type)
                                                    "wlan0-virt", ETHERTYPE_IP),
                                     src_ip, inet_addr ("192.168.1.3"),
                                     *proto_type),
-                      src_port, dst_port, get_random_u32 (), 0, 0x2, (u16)-1,
+                      src_port, dst_port, meta->src_seq = get_random_u32 (), 0, 0x2, (u16)-1,
                       0, NULL),
                   MAX_PACKET_LEN);
 
               eth_send ((eth_t *)eth, (u0 *)packet, MAX_PACKET_LEN - frame->plen);
 
+              recv_packet (eth->fd, if_ip_tcp, meta);
+
+              frame->packet = packet;
+              frame->plen = MAX_PACKET_LEN;
+
+              frame = fix_check_ip_tcp (
+    build_tcp_raw (
+        build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
+                                     "wlan0-virt", ETHERTYPE_IP),
+                      src_ip, inet_addr ("192.168.1.3"),
+                      *proto_type),
+        src_port, dst_port, meta->src_seq = meta->src_seq + 1, meta->dst_seq + htonl (1), 0x10, (u16)-1,
+        0, NULL),
+    MAX_PACKET_LEN);
+
+              eth_send ((eth_t *)eth, (u0 *)packet, MAX_PACKET_LEN - frame->plen);
+
               free (frm_sync_tcpip);
+              free (meta);
               break;
             }
           case -1:
@@ -96,7 +120,8 @@ create_client (u16 *proto_type)
               frame->sync = NULL;
               frame = build_sctp_init_hdr (
                   build_sctp_cmn_hdr_raw (
-                      build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
+                      build_ip_raw (
+                          build_mac_raw (frame, "46:9e:59:1e:5a:86",
                                                    "wlan0-virt", ETHERTYPE_IP),
                                     src_ip, inet_addr ("192.168.1.3"),
                                     *proto_type),

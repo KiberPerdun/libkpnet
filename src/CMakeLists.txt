@@ -54,6 +54,8 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         setup_bpf_filter.c
         recv_packet.c
         if_ip_sctp.c
+        if_ip_tcp.c
+        build_sctp_init_ack_hdr.c
 )
 
 add_executable(src ${SOURCES})

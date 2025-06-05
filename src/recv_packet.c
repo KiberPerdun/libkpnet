@@ -42,6 +42,7 @@ recv_packet (i32 fd, ifcall filter, u0 *meta)
             {
               break;
             }
+          //puts ("cock");
         }
     }
 

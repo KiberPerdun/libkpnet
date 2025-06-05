@@ -31,11 +31,25 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
   if (check_check_sctp != generate_crc32c ((const u8 *)sctp, sizeof (sctp_cmn_hdr_t) + ntohs (sctp->fld.len)))
     return NULL;
 
+  if (m->src_port != sctp->cmn.dstp)
+    return NULL;
+
   switch (sctp->fld.type)
     {
     case (SCTP_INIT):
       {
-        m->state = SCTP_INIT_RECEIVED;
+        if (m->state == SCTP_LISTEN)
+          {
+            printf ("%d", sctp->cmn.srcp);
+            m->dst_port = sctp->cmn.srcp;
+            m->state = SCTP_INIT_RECEIVED;
+
+            m->dst_tsn = sctp->type.init.init_tag;
+            m->src_ver_tag = sctp->type.init.init_tag;
+            m->dst_arwnd = sctp->type.init.a_rwnd;
+            m->dst_os = ntohs (sctp->type.init.os);
+            m->dst_mis = ntohs (sctp->type.init.mis);
+          }
         break;
       }
     default:

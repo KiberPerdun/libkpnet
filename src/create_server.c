@@ -38,8 +38,8 @@ create_server (u16 *proto_type)
 
   eth = eth_open ("wlan0-virt");
 
-  dst_port = htons (80);
-  src_port = get_random_u16 ();
+  src_port = htons ((u16)80);
+  dst_port = get_random_u16 ();
 
   volatile u32 src_ip = inet_addr ("192.168.1.3");
   setup_bpf_filter (eth->fd, *proto_type, *proto_type);
@@ -57,25 +57,33 @@ create_server (u16 *proto_type)
         if (NULL == frm_sync_tcpip)
           return 0;
 
+        if_ip_tcp_meta_t *meta = calloc (sizeof (if_ip_tcp_meta_t), 1);
+        meta->state = TCP_LISTEN;
+        meta->src_ip = src_ip;
+        meta->src_port = src_port;
+
         frame->sync = frm_sync_tcpip;
 
         switch (setjmp (frame->jmpbuf))
           {
           case 0:
             {
+              recv_packet (eth->fd, if_ip_tcp, meta);
+
               frame = fix_check_ip_tcp (
-                  build_tcp_raw (
-                      build_ip_raw (build_mac_raw (frame, "5a:50:12:f7:b0:f5",
-                                                   "wlan0-peer", ETHERTYPE_IP),
-                                    src_ip, inet_addr ("192.168.1.2"),
-                                    *proto_type),
-                      src_port, dst_port, get_random_u32 (), 0, 0x2, (u16)-1,
-                      0, NULL),
-                  MAX_PACKET_LEN);
+              build_tcp_raw (
+                  build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
+                                     "wlan0-virt", ETHERTYPE_IP),
+                        src_ip, inet_addr ("192.168.1.2"),
+                      *proto_type),
+        src_port, meta->dst_port, meta->src_seq=get_random_u32 (), meta->dst_seq + htonl (1), 0x12, (u16)-1,
+        0, NULL),
+    MAX_PACKET_LEN);
 
               eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
               free (frm_sync_tcpip);
+              free (meta);
               break;
             }
           case -1:
@@ -90,6 +98,7 @@ create_server (u16 *proto_type)
         if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
         meta->state = SCTP_LISTEN;
         meta->src_ip = src_ip;
+        meta->src_port = src_port;
 
         switch (setjmp (frame->jmpbuf))
           {
@@ -97,7 +106,22 @@ create_server (u16 *proto_type)
             {
               recv_packet (eth->fd, if_ip_sctp, meta);
 
-              printf ("\n\n%d", meta->state);
+              printf ("\nskibidi\n%d", meta->state);
+
+              frame->sync = NULL;
+              frame = build_sctp_init_ack_hdr (
+                  build_sctp_cmn_hdr_raw (
+                      build_ip_raw (build_mac_raw (frame, "5a:50:12:f7:b0:f5",
+                                                   "wlan0-peer", ETHERTYPE_IP),
+                                    src_ip, inet_addr ("192.168.1.2"),
+                                    *proto_type),
+                      src_port, meta->dst_port, 0),
+                  get_random_u32 (), -1, 32, 32, get_random_u32 (), meta);
+
+              frame = fix_check_ip_sctp ((frame_data_t *)frame, MAX_PACKET_LEN);
+
+              eth_send ((eth_t *)eth, (u0 *)packet,
+                        MAX_PACKET_LEN - frame->plen);
 
               break;
             }

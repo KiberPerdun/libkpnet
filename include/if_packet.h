@@ -168,11 +168,34 @@ typedef struct connection_args
   } tp_layer;
 } connection_args_t;
 
+typedef struct if_ip_tcp_meta
+{
+  i32 state;
+  u32 src_ip;
+  u32 dst_ip;
+  u16 src_port;
+  u16 dst_port;
+
+  u32 dst_seq;
+  u32 src_seq;
+} if_ip_tcp_meta_t;
+
 typedef struct if_ip_sctp_meta
 {
   int state;
   u32 src_ip;
   u32 dst_ip;
+  u16 src_port;
+  u16 dst_port;
+
+  u32 dst_tsn;
+  u32 src_ver_tag;
+  u32 dst_arwnd;
+  u16 dst_os;
+  u16 dst_mis;
+
+  u32 src_tsn;
+  u32 dst_ver_tag;
 } if_ip_sctp_meta_t;
 
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
@@ -185,6 +208,6 @@ bool if_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_sctp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
-u0   if_ip_tcp (u0 *packet, u16 size);
+u0*  if_ip_tcp (u0 *packet, u16 size, u0 *meta);
 u0*  if_ip_sctp (u0 *packet, u16 size, u0 *meta);
 #endif // LIBKPNET_IF_PACKET_H

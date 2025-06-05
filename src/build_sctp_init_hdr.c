@@ -29,4 +29,3 @@ build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, 
 
   return frame;
 }
-
