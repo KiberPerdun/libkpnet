@@ -15,6 +15,6 @@
 bool fill_ipv4(u32 src, u32 dst, u8 proto, u0 *args);
 int ip_check_add (const void *buf, size_t len, int check);
 u16 in_check (u16 *ptr, int nbytes);
-frame_data_t *build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto);
+frame_data_t *build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto, u16 plen);
 
 #endif // LIBKPNET_IPV4_H

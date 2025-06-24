@@ -36,7 +36,7 @@ create_server (u16 *proto_type)
   frame->plen = MAX_PACKET_LEN;
   frame->proto = PROTO_STACK_IP_TCP;
 
-  eth = eth_open ("wlan0-virt");
+  eth = eth_open ("veth0");
 
   src_port = htons ((u16)80);
   dst_port = get_random_u16 ();
@@ -72,10 +72,10 @@ create_server (u16 *proto_type)
 
               frame = fix_check_ip_tcp (
               build_tcp_raw (
-                  build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
-                                     "wlan0-virt", ETHERTYPE_IP),
+                  build_ip_raw (build_mac_raw (frame, "5a:50:12:f7:b0:f5",
+                                     "veth0", ETHERTYPE_IP),
                         src_ip, inet_addr ("192.168.1.2"),
-                      *proto_type),
+                      *proto_type, 40),
         src_port, meta->dst_port, meta->src_seq=get_random_u32 (), meta->dst_seq + htonl (1), 0x12, (u16)-1,
         0, NULL),
     MAX_PACKET_LEN);
@@ -114,8 +114,8 @@ create_server (u16 *proto_type)
                       build_ip_raw (build_mac_raw (frame, "5a:50:12:f7:b0:f5",
                                                    "wlan0-peer", ETHERTYPE_IP),
                                     src_ip, inet_addr ("192.168.1.2"),
-                                    *proto_type),
-                      src_port, meta->dst_port, 0),
+                                    *proto_type, 60),
+                      src_port, meta->dst_port, meta->src_ver_tag),
                   get_random_u32 (), -1, 32, 32, get_random_u32 (), meta);
 
               frame = fix_check_ip_sctp ((frame_data_t *)frame, MAX_PACKET_LEN);

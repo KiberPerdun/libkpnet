@@ -34,6 +34,8 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
   if (m->src_port != sctp->cmn.dstp)
     return NULL;
 
+  puts ("SCTP packet received");
+
   switch (sctp->fld.type)
     {
     case (SCTP_INIT):

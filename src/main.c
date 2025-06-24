@@ -6,7 +6,15 @@
 #include <stdlib.h>
 
 /*
- sudo ip link add name wlan0-virt type veth peer name wlan0-peer;sudo ip link set wlan0-virt up;sudo ip link set wlan0-peer up;sudo ip addr add 192.168.1.2/24 dev wlan0-virt;sudo ip addr add 192.168.1.3/24 dev wlan0-peer
+ sudo ip link add name wlan0-virt type veth peer name wlan0-peer;sudo ip link set wlan0-virt up;sudo ip link set veth0 up;sudo ip addr add 192.168.1.2/24 dev wlan0-virt;sudo ip addr add 192.168.1.3/24 dev veth0
+
+sudo ip link add wlan0-virt type veth peer name veth0
+sudo ip link set wlan0-virt up
+sudo ip link set veth0 up
+sudo ip addr add 192.168.1.2/24 dev wlan0-virt
+sudo ip addr add 192.168.1.3/24 dev veth0
+
+sudo ip link delete veth0
 
  sudo ip link delete wlan0-virt
  */
@@ -24,7 +32,7 @@ i32
 main (u0)
 {
   pthread_t client, server;
-  u16 proto = IPPROTO_TCP;
+  u16 proto = IPPROTO_SCTP;
 
   printf ("%lu", sizeof (dhcp_t));
 

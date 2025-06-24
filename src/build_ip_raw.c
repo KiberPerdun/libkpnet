@@ -7,7 +7,7 @@
 #include "if_packet.h"
 
 frame_data_t *
-build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto)
+build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto, u16 plen)
 {
   ipv4_t *hdr;
 
@@ -36,7 +36,7 @@ build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto)
       ((frame_sync_ip_tcp_t *)frame->sync)->ip_check_part = ip_checksum ((u16 *)hdr, sizeof (ipv4_t));
     }
 
-  hdr->len = htons (40);
+  hdr->len = htons (plen); // hjahahaha
 
   frame->packet += sizeof (ipv4_t);
   frame->plen -= sizeof (ipv4_t);

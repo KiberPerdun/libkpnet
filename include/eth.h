@@ -8,6 +8,7 @@
 #include "types.h"
 #include <malloc.h>
 #include <net/if.h>
+#include <unistd.h>
 #include <netpacket/packet.h>
 
 typedef struct eth_handle

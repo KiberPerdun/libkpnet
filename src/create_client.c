@@ -39,13 +39,13 @@ create_client (u16 *proto_type)
   frame->plen = MAX_PACKET_LEN;
   frame->proto = PROTO_STACK_IP_TCP;
 
-  eth = eth_open ("wlan0-peer");
+  eth = eth_open ("wlan0-virt");
 
   dst_port = htons (80);
   src_port = get_random_u16 ();
 
   volatile u32 src_ip = inet_addr ("192.168.1.2");
-  setup_bpf_filter (eth->fd, *proto_type, *proto_type);
+  // setup_bpf_filter (eth->fd, *proto_type, *proto_type);
 
   /* init end */
 
@@ -73,10 +73,10 @@ create_client (u16 *proto_type)
             {
               frame = fix_check_ip_tcp (
                   build_tcp_raw (
-                      build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
+                      build_ip_raw (build_mac_raw (frame, "b2:eb:f1:b3:fb:88",
                                                    "wlan0-virt", ETHERTYPE_IP),
                                     src_ip, inet_addr ("192.168.1.3"),
-                                    *proto_type),
+                                    *proto_type, 40),
                       src_port, dst_port, meta->src_seq = get_random_u32 (), 0, 0x2, (u16)-1,
                       0, NULL),
                   MAX_PACKET_LEN);
@@ -93,7 +93,7 @@ create_client (u16 *proto_type)
         build_ip_raw (build_mac_raw (frame, "46:9e:59:1e:5a:86",
                                      "wlan0-virt", ETHERTYPE_IP),
                       src_ip, inet_addr ("192.168.1.3"),
-                      *proto_type),
+                      *proto_type, 40),
         src_port, dst_port, meta->src_seq = meta->src_seq + 1, meta->dst_seq + htonl (1), 0x10, (u16)-1,
         0, NULL),
     MAX_PACKET_LEN);
@@ -124,7 +124,7 @@ create_client (u16 *proto_type)
                           build_mac_raw (frame, "46:9e:59:1e:5a:86",
                                                    "wlan0-virt", ETHERTYPE_IP),
                                     src_ip, inet_addr ("192.168.1.3"),
-                                    *proto_type),
+                                    *proto_type, 52),
                       src_port, dst_port, 0),
                   get_random_u32 (), -1, 32, 32, get_random_u32 ());
 
