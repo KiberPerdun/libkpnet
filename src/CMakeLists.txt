@@ -56,6 +56,14 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         if_ip_sctp.c
         if_ip_tcp.c
         build_sctp_init_ack_hdr.c
+        ../include/netlink.h
+        netlink_open.c
+        netlink_close.c
+        create_veth_pair.c
+        get_ifid.c
+        delete_if.c
+        up_if.c
+        bind_if.c
 )
 
 add_executable(src ${SOURCES})
