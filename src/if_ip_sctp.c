@@ -51,8 +51,9 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
             m->dst_mis = ntohs (sctp->type.init.mis);
 
             m->dst_ip = ip->src_addr;
+            break;
           }
-        break;
+        return NULL;
       }
     case SCTP_INIT_ACK:
       {
@@ -67,8 +68,13 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
             m->dst_mis = ntohs (sctp->type.init_ack.mis);
             m->src_tsn = sctp->type.init_ack.init_tsn;
 
-
+            char *cookie = calloc (1, ntohs (sctp->type.init_ack.cookie.len) - 4);
+            m->add_len = ntohs (sctp->type.init_ack.cookie.len) - 4;
+            memcpy (cookie, (u32 *)(((u0 *)&(sctp->type.init_ack.cookie)) + 4), ntohs (sctp->type.init_ack.cookie.len) - 4);
+            m->add = cookie;
+            break;
           }
+        return NULL;
       }
     default:
       return NULL;

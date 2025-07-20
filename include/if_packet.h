@@ -200,6 +200,7 @@ typedef struct if_ip_sctp_meta
   u32 dst_ver_tag;
 
   char *add;
+  u16 add_len;
 } if_ip_sctp_meta_t;
 
 typedef struct connection_sctp_state

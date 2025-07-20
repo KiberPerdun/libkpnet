@@ -72,10 +72,22 @@ create_client ()
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
-  // recv_packet (eth->fd, if_ip_sctp, meta);
+  recv_packet (eth->fd, if_ip_sctp, meta);
+
+  frame->packet -= sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t) + sizeof (sctp_fld_hdr_t);
+  frame->plen += sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t)  + sizeof (sctp_fld_hdr_t);
+
+  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, meta->src_ver_tag);
+  frame = build_sctp_cookie_echo_hdr (frame, meta);
+  frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
+
+  eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
+
+  free (meta->add);
 
 cleanup:
   eth_close (eth);
+  free (meta);
   free (state);
   free (packet);
   free (frame);

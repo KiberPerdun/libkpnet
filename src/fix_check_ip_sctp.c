@@ -18,6 +18,7 @@ fix_check_ip_sctp (frame_data_t *frame, u16 frm_max_len)
   sctp = packet + sizeof (ipv4_t);
   ip = packet;
 
+  ip->len = htons (MAX_PACKET_LEN - frame->plen - sizeof (mac_t));
   ip->check = 0;
   ip->check = ~(u16)ip_checksum ((u16 *)ip, sizeof (ipv4_t));
   sctp->cmn.check = generate_crc32c ((u8 *)sctp, sizeof (sctp_cmn_hdr_t) + ntohs (sctp->fld.len));
