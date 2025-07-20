@@ -8,7 +8,7 @@
 #include "unistd.h"
 
 frame_data_t *build_mac_raw
-(volatile frame_data_t *frame, u0 *gateway, const char *dev, u16 typelen)
+(frame_data_t *frame, const char *gateway, const char *dev, u16 typelen)
 {
   if (frame->plen < sizeof (mac_t) | NULL == frame->packet)
     {
@@ -22,27 +22,20 @@ frame_data_t *build_mac_raw
   mac_t *mac;
   i32 fd;
 
-  octet_num = 0;
   mac = frame->packet;
+  mac->type = htons (typelen);
+  fd = socket (AF_INET, SOCK_DGRAM, 0);
 
-  for (i32 i = 0, j = 0; i < 6; ++i)
-    {
-      while (((u8 *)gateway)[j] != ':' && ((u8 *)gateway)[j] != '\0')
-        octet[octet_num++] = ((u8 *)gateway)[j++];
+  snprintf (ifr.ifr_name, IFNAMSIZ, gateway);
 
-      octet[octet_num] = '\0';
-      ((u8 *)mac)[i] = (u8) strtol (octet, NULL, 16);
-      octet_num = 0;
-      j++;
-    }
+  ioctl (fd, SIOCGIFHWADDR, &ifr);
+  memcpy (mac, ifr.ifr_hwaddr.sa_data, 6);
 
   snprintf (ifr.ifr_name, IFNAMSIZ, dev);
 
-  fd = socket (AF_INET, SOCK_DGRAM, 0);
   ioctl (fd, SIOCGIFHWADDR, &ifr);
-
-  mac->type = htons (typelen);
   memcpy ((u0 *)mac + 6, ifr.ifr_hwaddr.sa_data, 6);
+
   close (fd);
 
   frame->packet += sizeof (mac_t);

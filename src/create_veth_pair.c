@@ -78,4 +78,3 @@ i32 create_veth_pair (const char *src, const char *dst)
   netlink_close (fd);
   free (req);
 }
-

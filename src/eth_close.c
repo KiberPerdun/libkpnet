@@ -1,7 +1,7 @@
 #include "eth.h"
 
 eth_t *
-eth_close (volatile eth_t *eth)
+eth_close (eth_t *eth)
 {
   if (eth)
     {

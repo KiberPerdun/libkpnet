@@ -18,7 +18,6 @@ i32
 main (u0)
 {
   pthread_t client, server;
-  u16 proto = IPPROTO_SCTP;
 
 #include "netlink.h"
 
@@ -33,10 +32,10 @@ main (u0)
   bind_if (get_ifid ("libkpnet_c"), src_ip);
   bind_if (get_ifid ("libkpnet_s"), dst_ip);
 
-  if (pthread_create (&client, NULL, (void *(*)(void *)) create_client, &proto) != 0)
+  if (pthread_create (&client, NULL, create_client, NULL) != 0)
     return 0;
 
-  if (pthread_create (&server, NULL, (void *(*)(void *)) create_server, &proto) != 0)
+  if (pthread_create (&server, NULL, create_server, NULL) != 0)
     return 0;
 
   if (pthread_join (client, NULL) != 0)
