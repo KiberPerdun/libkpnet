@@ -16,7 +16,6 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
 
   ipv4_t *ip = packet + sizeof (mac_t);
   sctp_t *sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-  // printf ("%d", *(u8 *)ip); // 01000101
   if_ip_sctp_meta_t *m = meta;
   if (ip->dest_addr != m->src_ip)
     return NULL;
@@ -38,11 +37,10 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
 
   switch (sctp->fld.type)
     {
-    case (SCTP_INIT):
+    case SCTP_INIT:
       {
         if (m->state == SCTP_LISTEN)
           {
-            printf ("%d", sctp->cmn.srcp);
             m->dst_port = sctp->cmn.srcp;
             m->state = SCTP_INIT_RECEIVED;
 
@@ -51,8 +49,26 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
             m->dst_arwnd = sctp->type.init.a_rwnd;
             m->dst_os = ntohs (sctp->type.init.os);
             m->dst_mis = ntohs (sctp->type.init.mis);
+
+            m->dst_ip = ip->src_addr;
           }
         break;
+      }
+    case SCTP_INIT_ACK:
+      {
+        if (m->state == SCTP_INIT_SENT)
+          {
+            m->dst_port = sctp->cmn.srcp;
+            m->state = SCTP_INIT_ACK_RECEIVED;
+
+            m->src_ver_tag = sctp->type.init_ack.init_tag;
+            m->dst_arwnd = sctp->type.init_ack.a_rwnd;
+            m->dst_os = ntohs (sctp->type.init_ack.os);
+            m->dst_mis = ntohs (sctp->type.init_ack.mis);
+            m->src_tsn = sctp->type.init_ack.init_tsn;
+
+
+          }
       }
     default:
       return NULL;

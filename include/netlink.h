@@ -14,6 +14,6 @@ i32 create_veth_pair (const char *src, const char *dst);
 i32 get_ifid (const char *name);
 i32 delete_if (i32 intf_index);
 i32 up_if (i32 intf_index);
-i32 bind_if (i32 intf_index, u32 ip);
+i32 bind_if (i32 intf_index, const u32 ip);
 
 #endif //NETLINK_H

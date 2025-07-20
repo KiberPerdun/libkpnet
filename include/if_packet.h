@@ -37,10 +37,7 @@ typedef struct frame_sync_ip_tcp
   u32 tcp_check_part;
 } frame_sync_ip_tcp_t;
 
-typedef struct connection_ip_tcp_state
-{
-  u8 cock;
-} connection_ip_tcp_state_t;
+#include <stdbool.h>
 
 #include <setjmp.h>
 
@@ -49,7 +46,6 @@ typedef struct frame_data
   u0 *packet;
   u16 plen;
   PROTO_STACK_TYPE_T proto;
-  jmp_buf jmpbuf;
   u0 *sync;
   u0 *state;
 } frame_data_t;
@@ -73,6 +69,7 @@ typedef struct frame_data
 #include <stdlib.h>
 #include "linux/netlink.h"
 #include "linux/rtnetlink.h"
+#include <stdatomic.h>
 #include "sctp.h"
 
 typedef struct ipv4_hdr {
@@ -193,12 +190,23 @@ typedef struct if_ip_sctp_meta
   u32 dst_tsn;
   u32 src_ver_tag;
   u32 dst_arwnd;
+  u32 src_arwnd;
+  u16 src_os;
+  u16 src_mis;
   u16 dst_os;
   u16 dst_mis;
 
   u32 src_tsn;
   u32 dst_ver_tag;
+
+  char *add;
 } if_ip_sctp_meta_t;
+
+typedef struct connection_sctp_state
+{
+  atomic_bool shutdown_requested;
+  atomic_bool packet_proccessing;
+} connection_sctp_state_t;
 
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
 typedef u0*   (*ifcall)(u0 *, u16, u0 *);

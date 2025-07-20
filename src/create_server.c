@@ -14,10 +14,12 @@
 #include <threads.h>
 #include <time.h>
 
+#define MAX_PACKET_LEN 1516
 u0 *
 create_server ()
 {
   /* init */
+  connection_sctp_state_t *state = NULL;
   u0 *packet = NULL;
   eth_t *eth;
   u16 src_port;
@@ -28,6 +30,13 @@ create_server ()
 
   if (!((packet = calloc (1, MAX_PACKET_LEN))))
     goto cleanup;
+
+  if (!((state = malloc (sizeof (connection_sctp_state_t)))))
+    goto cleanup;
+
+  atomic_init (&state->packet_proccessing, false);
+  atomic_init (&state->shutdown_requested, false);
+  frame->state = state;
 
   frame->packet = packet;
   frame->plen = MAX_PACKET_LEN;
@@ -43,22 +52,26 @@ create_server ()
   meta->state = SCTP_LISTEN;
   meta->src_ip = src_ip;
   meta->src_port = src_port;
+  meta->src_os = 32;
+  meta->src_mis = 32;
+  meta->src_arwnd = ~0;
 
   recv_packet (eth->fd, if_ip_sctp, meta);
-  printf ("\nskibidi\n%d\n", meta->state);
 
   frame->sync = NULL;
   frame = build_mac_raw (frame, "libkpnet_c", "libkpnet_s", ETHERTYPE_IP);
-  frame = build_ip_raw (frame, src_ip, inet_addr ("192.168.1.2"), IPPROTO_SCTP, 60);
-  frame = build_sctp_cmn_hdr_raw (frame, src_port, meta->dst_port, meta->src_ver_tag);
-  frame = build_sctp_init_ack_hdr (frame, get_random_u32 (), -1, 32, 32, get_random_u32 (), meta);
+  frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 60);
+  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, meta->src_ver_tag);
+  frame = build_sctp_init_ack_hdr (frame, meta->src_arwnd, meta->src_os,  meta->src_mis, meta);
   frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
 cleanup:
   eth_close (eth);
+  free (state);
   free (meta);
   free (packet);
   free (frame);
 }
+#undef MAX_PACKET_LEN

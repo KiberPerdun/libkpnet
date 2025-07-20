@@ -177,10 +177,10 @@ typedef struct sctp_hdr
   sctp_fld_hdr_t fld;  /* 4  */
   union
   {
-    sctp_data_hdr_t data;
-    sctp_sack_hdr_t sack;
     sctp_init_hdr_t init;
     sctp_init_ack_hdr_t init_ack;
+    sctp_data_hdr_t data;
+    sctp_sack_hdr_t sack;
     sctp_shut_hdr_t shut;
   } type;
 } sctp_t;
@@ -190,5 +190,5 @@ bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 
 frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag);
 frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len);
 frame_data_t *build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
-frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn, u0 *meta);
+frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta);
 #endif // LIBKPNET_SCTP_H

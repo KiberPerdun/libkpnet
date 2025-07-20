@@ -27,8 +27,8 @@ main (u0)
   up_if (get_ifid ("libkpnet_c"));
   up_if (get_ifid ("libkpnet_s"));
 
-  u32 src_ip = inet_addr ("192.168.1.2");
-  u32 dst_ip = inet_addr ("192.168.1.3");
+  const u32 src_ip = inet_addr ("192.168.1.2");
+  const u32 dst_ip = inet_addr ("192.168.1.3");
   bind_if (get_ifid ("libkpnet_c"), src_ip);
   bind_if (get_ifid ("libkpnet_s"), dst_ip);
 

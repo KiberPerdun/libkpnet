@@ -9,17 +9,21 @@
 #include "ipv4.h"
 #include "tcp.h"
 #include "types.h"
+
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <threads.h>
 #include <time.h>
 
+#define MAX_PACKET_LEN 1516
 u0 *
 create_client ()
 {
   /* init */
+  connection_sctp_state_t *state = NULL;
   u0 *packet = NULL;
   eth_t *eth;
   u16 src_port, dst_port;
@@ -31,27 +35,49 @@ create_client ()
   if (!((packet = calloc (1, MAX_PACKET_LEN))))
     goto cleanup;
 
+  if (!((state = malloc (sizeof (connection_sctp_state_t)))))
+    goto cleanup;
+
   frame->packet = packet;
   frame->plen = MAX_PACKET_LEN;
+
+  atomic_init (&state->packet_proccessing, false);
+  atomic_init (&state->shutdown_requested, false);
+  frame->state = state;
 
   eth = eth_open ("libkpnet_c");
 
   dst_port = htons (80);
   src_port = get_random_u16 ();
 
-  volatile u32 src_ip = inet_addr ("192.168.1.2");
+  u32 src_ip = inet_addr ("192.168.1.2");
+  u32 dst_ip = inet_addr ("192.168.1.3");
+
+  if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
+  meta->state = SCTP_INIT_SENT;
+  meta->src_ip = src_ip;
+  meta->dst_ip = dst_ip;
+  meta->src_port = src_port;
+  meta->dst_port = dst_port;
+  meta->src_os = 32;
+  meta->dst_os = 32;
+  meta->src_arwnd = ~0;
 
   frame->sync = NULL;
   frame = build_mac_raw (frame, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
-  frame = build_ip_raw (frame, src_ip, inet_addr ("192.168.1.3"), IPPROTO_SCTP, 52);
-  frame = build_sctp_cmn_hdr_raw (frame, src_port, dst_port, 0);
-  frame = build_sctp_init_hdr (frame, get_random_u32 (), -1, 32, 32, get_random_u32 ());
+  frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 52);
+  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, 0);
+  frame = build_sctp_init_hdr (frame, get_random_u32 (), meta->src_arwnd, meta->src_os, meta->dst_os, get_random_u32 ());
   frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
+  // recv_packet (eth->fd, if_ip_sctp, meta);
+
 cleanup:
   eth_close (eth);
+  free (state);
   free (packet);
   free (frame);
 }
+#undef MAX_PACKET_LEN

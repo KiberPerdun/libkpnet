@@ -6,7 +6,7 @@
 #include "get_random.h"
 
 frame_data_t *
-build_sctp_init_ack_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn, u0 *meta)
+build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta)
 {
   frame = build_sctp_fld_hdr_raw (frame, 2, 0, 28);
 
