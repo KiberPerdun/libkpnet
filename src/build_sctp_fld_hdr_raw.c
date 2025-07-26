@@ -4,25 +4,22 @@
 
 #include "if_packet.h"
 
-frame_data_t *
-build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len)
+u0 *
+build_sctp_fld_hdr_raw (u0 *packet, u16 *plen, u8 type, u8 flags, u16 len)
 {
-  if (frame->plen < sizeof (sctp_fld_hdr_t) || NULL == frame->packet)
-    {
-      frame->plen = 0;
-      return frame;
-    }
-
   sctp_fld_hdr_t *hdr;
-  hdr = frame->packet;
+
+  if (NULL == packet || NULL == plen)
+    return NULL;
+
+  packet -= sizeof (sctp_fld_hdr_t);
+  hdr = packet;
 
   hdr->type = type;
   hdr->flags = flags;
   hdr->len = htons (len);
 
-  frame->packet += sizeof (sctp_fld_hdr_t);
-  frame->plen -= sizeof (sctp_fld_hdr_t);
+  *plen += sizeof (sctp_fld_hdr_t);
 
-  return frame;
+  return packet;
 }
-

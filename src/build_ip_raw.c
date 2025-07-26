@@ -6,18 +6,16 @@
 #include "get_random.h"
 #include "if_packet.h"
 
-frame_data_t *
-build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto, u16 plen)
+u0 *
+build_ip_raw (u0 *packet, u16 *plen, u32 src, u32 dst, u8 proto)
 {
   ipv4_t *hdr;
 
-  if (frame->plen < sizeof (ipv4_t) || NULL == frame->packet)
-    {
-      frame->plen = 0;
-      return frame;
-    }
+  if (NULL == packet || NULL == plen)
+    return NULL;
 
-  hdr = frame->packet;
+  packet -= sizeof (ipv4_t);
+  hdr = packet;
 
   hdr->ihl = 5;
   hdr->ver = 4;
@@ -29,17 +27,10 @@ build_ip_raw (frame_data_t *frame, u32 src, u32 dst, u8 proto, u16 plen)
   hdr->src_addr = src;
   hdr->dest_addr = dst;
   hdr->check = 0;
+  *plen += sizeof (ipv4_t);
+  hdr->len = htons (*plen);
 
-  if (frame->sync)
-    {
-      hdr->len = 0;
-      ((frame_sync_ip_tcp_t *)frame->sync)->ip_check_part = ip_checksum ((u16 *)hdr, sizeof (ipv4_t));
-    }
+  hdr->check = ~(u16)ip_checksum ((u16 *)hdr, sizeof (ipv4_t));
 
-  hdr->len = htons (plen); // hjahahaha
-
-  frame->packet += sizeof (ipv4_t);
-  frame->plen -= sizeof (ipv4_t);
-
-  return frame;
+  return packet;
 }

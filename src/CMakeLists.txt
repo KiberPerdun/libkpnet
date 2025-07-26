@@ -65,6 +65,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         up_if.c
         bind_if.c
         build_sctp_cookie_echo_hdr.c
+        build_sctp_init_hdr_raw.c
 )
 
 add_executable(src ${SOURCES})

@@ -7,22 +7,21 @@
 #include <stdlib.h>
 #include "unistd.h"
 
-frame_data_t *build_mac_raw
-(frame_data_t *frame, const char *gateway, const char *dev, u16 typelen)
+u0 *
+build_mac_raw (u0 *packet, u16 *plen, const char *gateway, const char *dev, u16 typelen)
 {
-  if (frame->plen < sizeof (mac_t) | NULL == frame->packet)
-    {
-      frame->plen = 0;
-      return frame;
-    }
+  if (NULL == packet || NULL == plen || NULL == gateway || NULL == dev)
+    return NULL;
+
+  packet -= sizeof (mac_t);
 
   struct ifreq ifr = {0};
-  char octet[3];
-  u8 octet_num;
   mac_t *mac;
   i32 fd;
 
-  mac = frame->packet;
+
+  mac = packet;
+
   mac->type = htons (typelen);
   fd = socket (AF_INET, SOCK_DGRAM, 0);
 
@@ -38,8 +37,7 @@ frame_data_t *build_mac_raw
 
   close (fd);
 
-  frame->packet += sizeof (mac_t);
-  frame->plen -= sizeof (mac_t);
+  *plen += sizeof (mac_t);
 
-  return frame;
+  return packet;
 }

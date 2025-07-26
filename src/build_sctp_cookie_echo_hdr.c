@@ -15,7 +15,7 @@ build_sctp_cookie_echo_hdr (frame_data_t *frame, u0 *meta)
       return frame;
     }
 
-  frame = build_sctp_fld_hdr_raw (frame, 10, 0, 4 + m->add_len);
+  //frame = build_sctp_fld_hdr_raw1 (frame, 10, 0, 4 + m->add_len);
   memcpy (frame->packet, m->add, m->add_len);
 
   frame->packet += m->add_len;

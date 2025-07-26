@@ -54,6 +54,7 @@ create_client ()
   u32 dst_ip = inet_addr ("192.168.1.3");
 
   if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
+  frame->state = meta;
   meta->state = SCTP_INIT_SENT;
   meta->src_ip = src_ip;
   meta->dst_ip = dst_ip;
@@ -64,6 +65,14 @@ create_client ()
   meta->src_arwnd = ~0;
 
   frame->sync = NULL;
+  frame->plen = 0;
+
+  /* PHASE 1: syn */
+
+  frame = build_sctp_init_hdr (frame);
+  eth_send (eth, frame->packet, frame->plen);
+
+  /*
   frame = build_mac_raw (frame, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
   frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 52);
   frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, 0);
@@ -84,6 +93,7 @@ create_client ()
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
   free (meta->add);
+  */
 
 cleanup:
   eth_close (eth);

@@ -2,30 +2,27 @@
 // Created by KiberPerdun on 3/14/25.
 //
 
+#include "get_random.h"
 #include "if_packet.h"
 
+#include <net/ethernet.h>
+
 frame_data_t *
-build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn)
+build_sctp_init_hdr (frame_data_t *frame)
 {
-  frame = build_sctp_fld_hdr_raw (frame, 1, 0, 20);
+  if_ip_sctp_meta_t *meta;
 
-  if (frame->plen < sizeof (sctp_init_hdr_t) || NULL == frame->packet)
-    {
-      frame->plen = 0;
-      return frame;
-    }
+  if (NULL == frame || NULL == frame->packet)
+    return NULL;
 
-  sctp_init_hdr_t *hdr;
-  hdr = frame->packet;
+  meta = frame->state;
 
-  hdr->init_tag = htonl (tag);
-  hdr->a_rwnd = htonl (a_rwnd);
-  hdr->os = htons (os);
-  hdr->mis = htons (mis);
-  hdr->init_tsn = htonl (tsn);
-
-  frame->packet += sizeof (sctp_init_hdr_t);
-  frame->plen -= sizeof (sctp_init_hdr_t);
+  frame->packet += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_hdr_t);
+  frame->packet = build_sctp_init_hdr_raw (frame->packet, &frame->plen, get_random_u32 (), meta->src_arwnd, meta->src_os, meta->dst_os, get_random_u32 ());
+  frame->packet = build_sctp_fld_hdr_raw (frame->packet, &frame->plen, SCTP_INIT, 0, frame->plen + sizeof (sctp_fld_hdr_t));
+  frame->packet = build_sctp_cmn_hdr_raw (frame->packet, &frame->plen, meta->src_port, meta->dst_port, 0);
+  frame->packet = build_ip_raw (frame->packet, &frame->plen, meta->src_ip, meta->dst_ip, PROTO_SCTP);
+  frame->packet = build_mac_raw (frame->packet, &frame->plen, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
 
   return frame;
 }

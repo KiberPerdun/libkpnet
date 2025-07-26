@@ -8,7 +8,7 @@
 frame_data_t *
 build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta)
 {
-  frame = build_sctp_fld_hdr_raw (frame, 2, 0, 28);
+  //frame = build_sctp_fld_hdr_raw1 (frame, 2, 0, 28);
 
   if (frame->plen < sizeof (sctp_init_ack_hdr_t) || NULL == frame->packet)
     {

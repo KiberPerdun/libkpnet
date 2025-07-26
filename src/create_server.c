@@ -39,7 +39,7 @@ create_server ()
   frame->state = state;
 
   frame->packet = packet;
-  frame->plen = MAX_PACKET_LEN;
+  frame->plen = 0;
   frame->proto = PROTO_STACK_IP_TCP;
 
   eth = eth_open ("libkpnet_s");
@@ -47,6 +47,7 @@ create_server ()
   src_port = htons (80);
 
   u32 src_ip = inet_addr ("192.168.1.3");
+
 
   if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
   meta->state = SCTP_LISTEN;
@@ -56,6 +57,7 @@ create_server ()
   meta->src_mis = 32;
   meta->src_arwnd = ~0;
 
+  /*
   recv_packet (eth->fd, if_ip_sctp, meta);
 
   frame->sync = NULL;
@@ -66,6 +68,7 @@ create_server ()
   frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
+  */
 
 cleanup:
   eth_close (eth);

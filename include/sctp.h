@@ -187,9 +187,14 @@ typedef struct sctp_hdr
 
 u32 generate_crc32c (const u8 *buffer, u32 length);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);
-frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag);
-frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len);
-frame_data_t *build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
+/* frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag); */
+/* frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len); */
+/* frame_data_t *build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn); */
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame, u0 *meta);
+u0 *build_sctp_cmn_hdr_raw (u0 *packet, u16 *plen, u16 srcport, u16 dstport, u32 tag);
+u0 *build_sctp_fld_hdr_raw (u0 *packet, u16 *plen, u8 type, u8 flags, u16 len);
+u0 *build_sctp_init_hdr_raw (u0 *packet, u16 *plen, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
+
+frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
 #endif // LIBKPNET_SCTP_H
