@@ -62,6 +62,7 @@ typedef struct frame_data
 #include "stdbool.h"
 #include "udp.h"
 #include "eth.h"
+#include <net/ethernet.h>
 #include <linux/io_uring.h>
 #include <linux/filter.h>
 #include <fcntl.h>
@@ -178,30 +179,6 @@ typedef struct if_ip_tcp_meta
   u32 dst_seq;
   u32 src_seq;
 } if_ip_tcp_meta_t;
-
-typedef struct if_ip_sctp_meta
-{
-  int state;
-  u32 src_ip;
-  u32 dst_ip;
-  u16 src_port;
-  u16 dst_port;
-
-  u32 dst_tsn;
-  u32 src_ver_tag;
-  u32 dst_arwnd;
-  u32 src_arwnd;
-  u16 src_os;
-  u16 src_mis;
-  u16 dst_os;
-  u16 dst_mis;
-
-  u32 src_tsn;
-  u32 dst_ver_tag;
-
-  char *add;
-  u16 add_len;
-} if_ip_sctp_meta_t;
 
 typedef struct connection_sctp_state
 {

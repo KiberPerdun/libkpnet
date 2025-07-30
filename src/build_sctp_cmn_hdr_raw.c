@@ -18,7 +18,7 @@ build_sctp_cmn_hdr_raw (u0 *packet, u16 *plen, u16 srcport, u16 dstport, u32 tag
   hdr->check = 0;
   hdr->srcp = htons (srcport);
   hdr->dstp = htons (dstport);
-  hdr->tag = htons (tag);
+  hdr->tag = tag;
 
   *plen += sizeof (sctp_cmn_hdr_t);
 

@@ -47,7 +47,7 @@ create_client ()
 
   eth = eth_open ("libkpnet_c");
 
-  dst_port = htons (80);
+  dst_port = 80;
   src_port = get_random_u16 ();
 
   u32 src_ip = inet_addr ("192.168.1.2");
@@ -60,9 +60,9 @@ create_client ()
   meta->dst_ip = dst_ip;
   meta->src_port = src_port;
   meta->dst_port = dst_port;
-  meta->src_os = 32;
-  meta->dst_os = 32;
   meta->src_arwnd = ~0;
+  meta->src_os = 32;
+  meta->src_mis = 32;
 
   frame->sync = NULL;
   frame->plen = 0;
@@ -71,6 +71,12 @@ create_client ()
 
   frame = build_sctp_init_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
+  frame->plen = 0;
+
+  recv_packet (eth->fd, if_ip_sctp, meta);
+  frame = build_sctp_cookie_echo_hdr (frame);
+  eth_send (eth, frame->packet, frame->plen);
+  frame->plen = 0;
 
   /*
   frame = build_mac_raw (frame, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);

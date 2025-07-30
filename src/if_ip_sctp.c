@@ -30,7 +30,7 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
   if (check_check_sctp != generate_crc32c ((const u8 *)sctp, sizeof (sctp_cmn_hdr_t) + ntohs (sctp->fld.len)))
     return NULL;
 
-  if (m->src_port != sctp->cmn.dstp)
+  if (m->src_port != ntohs (sctp->cmn.dstp))
     return NULL;
 
   puts ("SCTP packet received");
@@ -41,14 +41,13 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
       {
         if (m->state == SCTP_LISTEN)
           {
-            m->dst_port = sctp->cmn.srcp;
+            m->dst_port = ntohs (sctp->cmn.srcp);
             m->state = SCTP_INIT_RECEIVED;
 
-            m->dst_tsn = sctp->type.init.init_tag;
-            m->src_ver_tag = sctp->type.init.init_tag;
-            m->dst_arwnd = sctp->type.init.a_rwnd;
-            m->dst_os = ntohs (sctp->type.init.os);
-            m->dst_mis = ntohs (sctp->type.init.mis);
+            m->ver_tag = sctp->type.init.init_tag;
+            m->a_rwnd = ntohs (sctp->type.init.a_rwnd);
+            m->os = ntohs (sctp->type.init.os);
+            m->mis = ntohs (sctp->type.init.mis);
 
             m->dst_ip = ip->src_addr;
             break;
@@ -59,19 +58,40 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
       {
         if (m->state == SCTP_INIT_SENT)
           {
-            m->dst_port = sctp->cmn.srcp;
+            m->dst_port = ntohs (sctp->cmn.srcp);
             m->state = SCTP_INIT_ACK_RECEIVED;
 
-            m->src_ver_tag = sctp->type.init_ack.init_tag;
-            m->dst_arwnd = sctp->type.init_ack.a_rwnd;
-            m->dst_os = ntohs (sctp->type.init_ack.os);
-            m->dst_mis = ntohs (sctp->type.init_ack.mis);
-            m->src_tsn = sctp->type.init_ack.init_tsn;
+            m->init_tag = sctp->type.init_ack.init_tag;
+            m->a_rwnd = sctp->type.init_ack.a_rwnd;
+            m->os = ntohs (sctp->type.init_ack.os);
+            m->mis = ntohs (sctp->type.init_ack.mis);
+            m->tsn = sctp->type.init_ack.init_tsn;
 
-            char *cookie = calloc (1, ntohs (sctp->type.init_ack.cookie.len) - 4);
-            m->add_len = ntohs (sctp->type.init_ack.cookie.len) - 4;
-            memcpy (cookie, (u32 *)(((u0 *)&(sctp->type.init_ack.cookie)) + 4), ntohs (sctp->type.init_ack.cookie.len) - 4);
-            m->add = cookie;
+            if (ntohs (sctp->type.cookie.type) != 7)
+              return NULL;
+
+            m->add_len = ntohs (sctp->type.cookie.len) - sizeof (sctp_cookie_t);
+            if (NULL == (m->add = malloc (m->add_len)))
+              return NULL;
+
+            memcpy (m->add, (u0 *) sctp + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_ack_hdr_t) + sizeof (sctp_cookie_t), m->add_len);
+
+            break;
+          }
+        return NULL;
+      }
+    case SCTP_COOKIE_ECHO:
+      {
+        if (m->state == SCTP_LISTEN || m->state == SCTP_INIT_RECEIVED)
+          {
+            sctp_fld_hdr_t *cookie_echo = &sctp->fld;
+            if (ntohs (cookie_echo->len) < sizeof (cookie_t) + sizeof (sctp_cookie_t) + sizeof (u32))
+              return NULL;
+
+            if ((m->add = calloc (sizeof (if_ip_sctp_meta_t), 1)) == NULL)
+              return NULL;
+
+            memcpy (m->add, cookie_echo + 1, sizeof (cookie_t));
             break;
           }
         return NULL;

@@ -44,34 +44,46 @@ create_server ()
 
   eth = eth_open ("libkpnet_s");
 
-  src_port = htons (80);
+  src_port = 80;
 
   u32 src_ip = inet_addr ("192.168.1.3");
 
-
   if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
+  frame->state = meta;
   meta->state = SCTP_LISTEN;
   meta->src_ip = src_ip;
   meta->src_port = src_port;
+  meta->src_arwnd = ~0;
   meta->src_os = 32;
   meta->src_mis = 32;
-  meta->src_arwnd = ~0;
+
+  recv_packet (eth->fd, if_ip_sctp, meta);
+  frame = build_sctp_init_ack_hdr (frame);
+  eth_send (eth, frame->packet, frame->plen);
+  frame->plen = 0;
+
+  recv_packet (eth->fd, if_ip_sctp, meta);
+  frame->state = meta->add;
+  frame = build_sctp_cookie_ack_hdr (frame);
+  eth_send (eth, frame->packet, frame->plen);
+  frame->plen = 0;
 
   /*
-  recv_packet (eth->fd, if_ip_sctp, meta);
 
   frame->sync = NULL;
   frame = build_mac_raw (frame, "libkpnet_c", "libkpnet_s", ETHERTYPE_IP);
   frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 60);
-  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, meta->src_ver_tag);
-  frame = build_sctp_init_ack_hdr (frame, meta->src_arwnd, meta->src_os,  meta->src_mis, meta);
-  frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
+  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port,
+  meta->src_ver_tag); frame = build_sctp_init_ack_hdr (frame, meta->src_arwnd,
+  meta->src_os,  meta->src_mis, meta); frame = fix_check_ip_sctp (frame,
+  MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
   */
 
 cleanup:
   eth_close (eth);
+  free (frame->state);
   free (state);
   free (meta);
   free (packet);

@@ -82,11 +82,8 @@ if_sctp (u0 *packet, u64 size, connection_args_t *args)
         args->sctp_connection.dest_mis = pck->type.init_ack.mis;
         args->sctp_connection.dest_os = pck->type.init_ack.os;
 
-        args->sctp_connection.hmac
-            = *(u32 *)(((u0 *)&(pck->type.init_ack.cookie)) + 4);
 
         return true;
-        break;
       }
     case SCTP_COOKIE_ECHO:
       {

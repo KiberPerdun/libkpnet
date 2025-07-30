@@ -2,24 +2,27 @@
 // Created by KiberPerdun on 7/20/25.
 //
 
+#include "get_random.h"
 #include "if_packet.h"
 
 frame_data_t *
-build_sctp_cookie_echo_hdr (frame_data_t *frame, u0 *meta)
+build_sctp_cookie_echo_hdr (frame_data_t *frame)
 {
-  if_ip_sctp_meta_t *m = meta;
+  if_ip_sctp_meta_t *meta;
 
-  if (frame->plen < 4 + m->add_len || NULL == frame->packet)
-    {
-      frame->plen = 0;
-      return frame;
-    }
+  if (NULL == frame || NULL == frame->packet || NULL == frame->state)
+    return NULL;
 
-  //frame = build_sctp_fld_hdr_raw1 (frame, 10, 0, 4 + m->add_len);
-  memcpy (frame->packet, m->add, m->add_len);
+  meta = frame->state;
 
-  frame->packet += m->add_len;
-  frame->plen -= m->add_len;
+  frame->packet += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_cookie_echo_hdr_t) + meta->add_len;
+  frame->packet = build_sctp_cookie_echo_hdr_raw (frame->packet, &frame->plen, meta->add, meta->add_len);
+  frame->packet = build_sctp_fld_hdr_raw (frame->packet, &frame->plen, SCTP_COOKIE_ECHO, 0, frame->plen + sizeof (sctp_fld_hdr_t));
+  frame->packet = build_sctp_cmn_hdr_raw (frame->packet, &frame->plen, meta->src_port, meta->dst_port, meta->init_tag);
+  frame->packet = build_ip_raw (frame->packet, &frame->plen, meta->src_ip, meta->dst_ip, PROTO_SCTP);
+  frame->packet = build_mac_raw (frame->packet, &frame->plen, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
+
+  free (meta->add);
 
   return frame;
 }

@@ -102,8 +102,14 @@ typedef struct sctp_init_ack_hdr
   u16 os;
   u16 mis;
   u32 init_tsn;
-  sctp_opt_t cookie;
 } sctp_init_ack_hdr_t;
+
+typedef struct sctp_cookie_echo_hdr
+{
+  u8 type;
+  u8 flags;
+  u16 len;
+} sctp_cookie_echo_hdr_t;
 
 typedef struct sctp_sack_hdr
 {
@@ -171,6 +177,55 @@ typedef struct sctp_error
   u16 len;
 } sctp_error_t;
 
+typedef struct sctp_parameter
+{
+  u16 type;
+  u16 len;
+} sctp_parameter_t;
+
+typedef struct sctp_parameter sctp_cookie_t;
+
+typedef struct cookie
+{
+  u32 ver_tag;
+  u32 init_tag;
+  u32 a_rwnd;
+  u16 os;
+  u16 mis;
+  u32 tsn;
+  u32 src_ip;
+  u32 dst_ip;
+  u32 src_port;
+  u32 dst_port;
+  /* params */
+
+  /* MAC */
+} cookie_t;
+
+typedef struct if_ip_sctp_meta
+{
+  /* cookie_t */
+  u32 ver_tag;
+  u32 init_tag;
+  u32 a_rwnd;
+  u16 os;
+  u16 mis;
+  u32 tsn;
+  u32 src_ip;
+  u32 dst_ip;
+  u32 src_port;
+  u32 dst_port;
+
+  /* others */
+  i32 state;
+  u32 src_arwnd;
+  u16 src_os;
+  u16 src_mis;
+
+  u0 *add;
+  u16 add_len;
+} if_ip_sctp_meta_t;
+
 typedef struct sctp_hdr
 {
   sctp_cmn_hdr_t cmn; /* 12 */
@@ -178,7 +233,11 @@ typedef struct sctp_hdr
   union
   {
     sctp_init_hdr_t init;
-    sctp_init_ack_hdr_t init_ack;
+    struct
+    {
+      sctp_init_ack_hdr_t init_ack;
+      sctp_cookie_t cookie;
+    };
     sctp_data_hdr_t data;
     sctp_sack_hdr_t sack;
     sctp_shut_hdr_t shut;
@@ -190,11 +249,18 @@ bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 
 /* frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag); */
 /* frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len); */
 /* frame_data_t *build_sctp_init_hdr (frame_data_t *frame, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn); */
-frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta);
-frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame, u0 *meta);
+/* frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame, u32 a_rwnd, u16 os, u16 mis, u0 *meta); */
+/* frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame, u0 *meta); */
 u0 *build_sctp_cmn_hdr_raw (u0 *packet, u16 *plen, u16 srcport, u16 dstport, u32 tag);
 u0 *build_sctp_fld_hdr_raw (u0 *packet, u16 *plen, u8 type, u8 flags, u16 len);
 u0 *build_sctp_init_hdr_raw (u0 *packet, u16 *plen, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
+u0 *build_sctp_init_ack_hdr_raw (u0 *packet, u16 *plen, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn);
+u0 *build_sctp_cookie_echo_hdr_raw (u0 *packet, u16 *plen, u0 *cookie, u16 cookie_len);
+
+u0 *build_sctp_cookie_param_raw (u0 *packet, u16 *plen, cookie_t *cookie);
 
 frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
+frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
+frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
+frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
 #endif // LIBKPNET_SCTP_H

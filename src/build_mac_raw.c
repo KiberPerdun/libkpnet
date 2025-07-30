@@ -19,7 +19,6 @@ build_mac_raw (u0 *packet, u16 *plen, const char *gateway, const char *dev, u16 
   mac_t *mac;
   i32 fd;
 
-
   mac = packet;
 
   mac->type = htons (typelen);

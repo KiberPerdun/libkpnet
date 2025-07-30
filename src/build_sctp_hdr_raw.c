@@ -60,10 +60,6 @@ build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os,
         sctp->type.init_ack.init_tsn = args->sctp_connection.src_tsn = get_random_u32 ();
         sctp->type.init_ack.init_tag = args->sctp_connection.dst_ver_tag = get_random_u32 ();
 
-        sctp->type.init_ack.cookie.len = htons (8);
-        sctp->type.init_ack.cookie.type = htons (7);
-
-        *(u32 *)(((u0 *)&(sctp->type.init_ack.cookie)) + 4) = args->sctp_connection.hmac = generate_crc32c (args->payload, 20);
 
         args->tp_layer.sctp->cmn.check = (generate_crc32c ((const u8 *)args->tp_layer.sctp, 12 + ntohs (sctp->fld.len)));
 
