@@ -6,6 +6,7 @@
 #include "eth.h"
 #include "get_random.h"
 #include "if_packet.h"
+#include "netlink.h"
 #include "types.h"
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -56,6 +57,9 @@ create_server ()
   meta->src_arwnd = ~0;
   meta->src_os = 32;
   meta->src_mis = 32;
+
+  get_ifmac (CLIENT_INAME, meta->gateway);
+  get_ifmac (SERVER_INAME, meta->dev);
 
   recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_init_ack_hdr (frame);

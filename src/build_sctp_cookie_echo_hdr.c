@@ -20,7 +20,7 @@ build_sctp_cookie_echo_hdr (frame_data_t *frame)
   frame->packet = build_sctp_fld_hdr_raw (frame->packet, &frame->plen, SCTP_COOKIE_ECHO, 0, frame->plen + sizeof (sctp_fld_hdr_t));
   frame->packet = build_sctp_cmn_hdr_raw (frame->packet, &frame->plen, meta->src_port, meta->dst_port, meta->init_tag);
   frame->packet = build_ip_raw (frame->packet, &frame->plen, meta->src_ip, meta->dst_ip, PROTO_SCTP);
-  frame->packet = build_mac_raw (frame->packet, &frame->plen, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
+  frame->packet = build_mac_raw (frame->packet, &frame->plen, meta->gateway, meta->dev, ETHERTYPE_IP);
 
   free (meta->add);
 

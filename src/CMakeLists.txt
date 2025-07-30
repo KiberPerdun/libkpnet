@@ -70,6 +70,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         build_sctp_cookie_param_raw.c
         build_sctp_cookie_echo_hdr_raw.c
         build_sctp_cookie_ack_hdr.c
+        get_ifmac.c
 )
 
 add_executable(src ${SOURCES})

@@ -20,17 +20,16 @@ main (u0)
   pthread_t client, server;
 
 #include "netlink.h"
-
-  create_veth_pair ("libkpnet_c", "libkpnet_s");
+  create_veth_pair (CLIENT_INAME, SERVER_INAME);
   /* delete_if (get_ifid ("libkpnet_c")); */
   /* delete_if (get_ifid ("libkpnet_s")); */
-  up_if (get_ifid ("libkpnet_c"));
-  up_if (get_ifid ("libkpnet_s"));
+  up_if (get_ifid (CLIENT_INAME));
+  up_if (get_ifid (SERVER_INAME));
 
   const u32 src_ip = inet_addr ("192.168.1.2");
   const u32 dst_ip = inet_addr ("192.168.1.3");
-  bind_if (get_ifid ("libkpnet_c"), src_ip);
-  bind_if (get_ifid ("libkpnet_s"), dst_ip);
+  bind_if (get_ifid (CLIENT_INAME), src_ip);
+  bind_if (get_ifid (SERVER_INAME), dst_ip);
 
   if (pthread_create (&client, NULL, create_client, NULL) != 0)
     return 0;

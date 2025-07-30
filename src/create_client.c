@@ -7,6 +7,7 @@
 #include "get_random.h"
 #include "if_packet.h"
 #include "ipv4.h"
+#include "netlink.h"
 #include "tcp.h"
 #include "types.h"
 
@@ -64,10 +65,11 @@ create_client ()
   meta->src_os = 32;
   meta->src_mis = 32;
 
+  get_ifmac (CLIENT_INAME, meta->dev);
+  get_ifmac (SERVER_INAME, meta->gateway);
+
   frame->sync = NULL;
   frame->plen = 0;
-
-  /* PHASE 1: syn */
 
   frame = build_sctp_init_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);

@@ -14,6 +14,9 @@ typedef struct node {
   struct node *next;
 } node_t;
 
+#define CLIENT_INAME "libkpnet_c"
+#define SERVER_INAME "libkpnet_s"
+
 /* L2 -> ? -> L3 -> ? -> ... -> [payload]<fragmented data><signaling> -> aee */
 typedef enum PROTO_STACK_TYPE
 {

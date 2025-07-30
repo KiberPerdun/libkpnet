@@ -221,6 +221,8 @@ typedef struct if_ip_sctp_meta
   u32 src_arwnd;
   u16 src_os;
   u16 src_mis;
+  u8 dev[6];
+  u8 gateway[6];
 
   u0 *add;
   u16 add_len;

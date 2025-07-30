@@ -1,11 +1,11 @@
 //
-// Created by KiberPerdun on 7/18/25.
+// Created by KiberPerdun on 7/31/25.
 //
 
 #include "netlink.h"
 
 i32
-get_ifid (const char *name)
+get_ifmac (const char *name, u8 *mac)
 {
   struct rtattr *rta;
   struct ifinfomsg *ifinfo;
@@ -39,12 +39,17 @@ get_ifid (const char *name)
 
   send (fd, req, nlmsg->nlmsg_len, 0);
   recv (fd, resp, 4096, 0);
+
   nlmsg = resp;
   ifinfo = NLMSG_DATA (nlmsg);
+  rta = IFLA_RTA (ifinfo);
+  for (;rta->rta_type != 1;)
+    rta = RTA_NEXT (rta, nlmsg->nlmsg_len);
+
+  memcpy (mac, RTA_DATA (rta), 6);
 
   netlink_close (fd);
-  fd = ifinfo->ifi_index;
   free (req);
   free (resp);
-  return fd;
+  return 1;
 }
