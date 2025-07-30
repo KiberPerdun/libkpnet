@@ -65,8 +65,17 @@ create_client ()
   meta->src_os = 32;
   meta->src_mis = 32;
 
-  get_ifmac (CLIENT_INAME, meta->dev);
-  get_ifmac (SERVER_INAME, meta->gateway);
+  if (get_ifmac (SERVER_INAME, meta->gateway))
+    {
+      fputs ("Failed to get gateway interface mac\n", stderr);
+      goto cleanup;
+    }
+
+  if (get_ifmac (CLIENT_INAME, meta->dev))
+    {
+      fputs ("Failed to get dev interface mac\n", stderr);
+      goto cleanup;
+    }
 
   frame->sync = NULL;
   frame->plen = 0;
@@ -84,19 +93,21 @@ create_client ()
   frame = build_mac_raw (frame, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
   frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 52);
   frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, 0);
-  frame = build_sctp_init_hdr (frame, get_random_u32 (), meta->src_arwnd, meta->src_os, meta->dst_os, get_random_u32 ());
-  frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
+  frame = build_sctp_init_hdr (frame, get_random_u32 (), meta->src_arwnd,
+  meta->src_os, meta->dst_os, get_random_u32 ()); frame = fix_check_ip_sctp
+  (frame, MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
   recv_packet (eth->fd, if_ip_sctp, meta);
 
-  frame->packet -= sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t) + sizeof (sctp_fld_hdr_t);
-  frame->plen += sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t)  + sizeof (sctp_fld_hdr_t);
+  frame->packet -= sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t) + sizeof
+  (sctp_fld_hdr_t); frame->plen += sizeof (sctp_cmn_hdr_t) + sizeof
+  (sctp_init_hdr_t)  + sizeof (sctp_fld_hdr_t);
 
-  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, meta->src_ver_tag);
-  frame = build_sctp_cookie_echo_hdr (frame, meta);
-  frame = fix_check_ip_sctp (frame, MAX_PACKET_LEN);
+  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port,
+  meta->src_ver_tag); frame = build_sctp_cookie_echo_hdr (frame, meta); frame =
+  fix_check_ip_sctp (frame, MAX_PACKET_LEN);
 
   eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
 
