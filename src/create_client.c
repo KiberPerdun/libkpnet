@@ -8,6 +8,7 @@
 #include "if_packet.h"
 #include "ipv4.h"
 #include "netlink.h"
+#include "ring_buffer.h"
 #include "tcp.h"
 #include "types.h"
 
@@ -18,6 +19,19 @@
 #include <stdlib.h>
 #include <threads.h>
 #include <time.h>
+
+#define NS_PER_SEC 1000000000LL
+
+#define BENCH_START() \
+struct timespec _bench_start, _bench_end; \
+clock_gettime(CLOCK_MONOTONIC, &_bench_start);
+
+#define BENCH_END(name, ops) \
+clock_gettime(CLOCK_MONOTONIC, &_bench_end); \
+int64_t _ns = (_bench_end.tv_sec - _bench_start.tv_sec) * NS_PER_SEC + \
+(_bench_end.tv_nsec - _bench_start.tv_nsec); \
+printf("%s: %ld ns total, %.2f ns/op, %.2f Mops/sec\n", \
+name, _ns, (double)_ns/(ops), ((double)ops*1e3)/_ns);
 
 #define MAX_PACKET_LEN 1516
 u0 *
@@ -30,14 +44,19 @@ create_client ()
   u16 src_port, dst_port;
   frame_data_t *frame;
 
-  if (!((frame = malloc (sizeof (frame_data_t)))))
+  if (!((frame = aligned_alloc (64, sizeof (frame_data_t) + 63 & ~63))))
     goto cleanup;
 
-  if (!((packet = calloc (1, MAX_PACKET_LEN))))
+  if (!((packet = aligned_alloc (64, MAX_PACKET_LEN + 63 & ~63))))
     goto cleanup;
 
-  if (!((state = malloc (sizeof (connection_sctp_state_t)))))
+  if (!((state = aligned_alloc (64, sizeof (connection_sctp_state_t) + 63 & ~63))))
     goto cleanup;
+
+  memset (packet, 0, MAX_PACKET_LEN);
+  _mm_prefetch (frame, _MM_HINT_T0);
+  _mm_prefetch (packet, _MM_HINT_T0);
+  _mm_prefetch (state, _MM_HINT_T0);
 
   frame->packet = packet;
   frame->plen = MAX_PACKET_LEN;
@@ -80,7 +99,9 @@ create_client ()
   frame->sync = NULL;
   frame->plen = 0;
 
+  BENCH_START ();
   frame = build_sctp_init_hdr (frame);
+  BENCH_END ("build_sctp_init_hdr", 1);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 

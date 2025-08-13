@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include "unistd.h"
 
-u0 *
+inline __attribute__ ((always_inline, hot)) u0 *
 build_mac_raw (u0 *packet, u16 *plen, const char *gateway, const char *dev, u16 typelen)
 {
   if (NULL == packet || NULL == plen || NULL == gateway || NULL == dev)
     return NULL;
 
-  packet -= sizeof (mac_t);
+  packet -= 14;
 
   mac_t *mac;
 
@@ -22,7 +22,7 @@ build_mac_raw (u0 *packet, u16 *plen, const char *gateway, const char *dev, u16 
   memcpy (mac, gateway, 6);
   memcpy ((u0 *)mac + 6, dev, 6);
 
-  *plen += sizeof (mac_t);
+  *plen += 14;
 
   return packet;
 }

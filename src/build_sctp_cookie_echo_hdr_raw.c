@@ -4,7 +4,7 @@
 
 #include "if_packet.h"
 
-u0 *
+__attribute__ ((always_inline, hot)) u0 *
 build_sctp_cookie_echo_hdr_raw (u0 *packet, u16 *plen, u0 *cookie, u16 cookie_len)
 {
   if (NULL == packet || NULL == plen)

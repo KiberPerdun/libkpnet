@@ -4,7 +4,7 @@
 
 #include "if_packet.h"
 
-u0 *
+inline __attribute__ ((always_inline, hot)) u0 *
 build_sctp_init_hdr_raw (u0 *packet, u16 *plen, u32 tag, u32 a_rwnd, u16 os, u16 mis, u32 tsn)
 {
   sctp_init_hdr_t *hdr;

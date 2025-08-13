@@ -50,6 +50,9 @@ eth_open (const char *device)
   eth->sll.sll_family = AF_PACKET;
   eth->sll.sll_protocol = htons (ETH_P_IP);
   eth->sll.sll_ifindex = eth->ifr.ifr_ifindex;
+  eth->sll.sll_hatype = 1;
+  eth->sll.sll_halen = ETH_ALEN;
+  eth->sll.sll_pkttype = PACKET_HOST; /* TODO: pkttype */
 
   return eth;
 }

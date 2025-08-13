@@ -4,7 +4,7 @@
 
 #include "if_packet.h"
 
-u0 *
+inline __attribute__ ((always_inline, hot)) u0 *
 build_sctp_cmn_hdr_raw (u0 *packet, u16 *plen, u16 srcport, u16 dstport, u32 tag)
 {
   sctp_cmn_hdr_t *hdr;

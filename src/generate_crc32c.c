@@ -10,8 +10,9 @@
 
 
 #if defined(__SSE4_2__) && defined(__x86_64__)
-u32
-generate_crc32c (const u8 *data, u32 length) {
+__attribute__ ((hot)) u32
+generate_crc32c (const u8 *data, u32 length)
+{
   u64 chunk;
   u64 crc;
   i64 i;
@@ -43,7 +44,7 @@ generate_crc32c (const u8 *data, u32 length) {
 
 #define CRC32C(c,d) (c=(c>>8)^crc_c[(c^(d))&0xFF])
 
-uint32_t
+__attribute__ ((hot)) uint32_t
 generate_crc32c(const unsigned char *buffer, unsigned int length)
 {
   uint32_t crc_c[256] = {

@@ -72,6 +72,11 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         build_sctp_cookie_ack_hdr.c
         get_ifmac.c
         get_iftype.c
+        ../include/md5.h
+        md5.c
+        ../include/ring_buffer.h
+        init_ring_buffer.c
+        free_ring_buffer.c
 )
 
 add_executable(src ${SOURCES})

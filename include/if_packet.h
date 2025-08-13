@@ -74,6 +74,7 @@ typedef struct frame_data
 #include "linux/netlink.h"
 #include "linux/rtnetlink.h"
 #include <stdatomic.h>
+#include "immintrin.h"
 #include "sctp.h"
 
 typedef struct ipv4_hdr {

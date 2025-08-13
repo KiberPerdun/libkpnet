@@ -6,7 +6,7 @@
 #include "get_random.h"
 #include "if_packet.h"
 
-u0 *
+inline __attribute__ ((always_inline, hot)) u0 *
 build_ip_raw (u0 *packet, u16 *plen, u32 src, u32 dst, u8 proto)
 {
   ipv4_t *hdr;

@@ -61,7 +61,7 @@ typedef struct sctp_opt
 {
   u16 type;
   u16 len;
-} sctp_opt_t;
+} __attribute__ ((aligned (4))) sctp_opt_t;
 
 typedef struct sctp_common_hdr
 {
