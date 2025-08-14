@@ -3,8 +3,8 @@
 //
 
 #include "if_packet.h"
+#include "random.h"
 #include "sctp.h"
-#include "get_random.h"
 
 bool
 build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os,

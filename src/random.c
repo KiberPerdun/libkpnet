@@ -2,7 +2,7 @@
 // Created by KiberPerdun on 20.12.2024.
 //
 
-#include "get_random.h"
+#include "random.h"
 
 u0
 get_random (u0 *buf, u64 size)

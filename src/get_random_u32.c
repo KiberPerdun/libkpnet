@@ -2,7 +2,9 @@
 // Created by KiberPerdun on 20.12.2024.
 //
 
-#include "get_random.h"
+#include "random.h"
+
+#include <stdio.h>
 
 u32
 get_random_u32 ()

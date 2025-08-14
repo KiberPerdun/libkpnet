@@ -4,10 +4,10 @@
 
 #include "checks.h"
 #include "eth.h"
-#include "get_random.h"
 #include "if_packet.h"
 #include "ipv4.h"
 #include "netlink.h"
+#include "random.h"
 #include "ring_buffer.h"
 #include "tcp.h"
 #include "types.h"
@@ -99,11 +99,16 @@ create_client ()
   frame->sync = NULL;
   frame->plen = 0;
 
+  generate_random_buffer ();
+
   BENCH_START ();
   frame = build_sctp_init_hdr (frame);
   BENCH_END ("build_sctp_init_hdr", 1);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
+
+  if (!eth)
+    goto cleanup;
 
   recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_cookie_echo_hdr (frame);

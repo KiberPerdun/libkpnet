@@ -7,22 +7,23 @@
 inline __attribute__ ((always_inline, hot)) u0 *
 build_sctp_cmn_hdr_raw (u0 *packet, u16 *plen, u16 srcport, u16 dstport, u32 tag)
 {
-  sctp_cmn_hdr_t *hdr;
+  sctp_cmn_hdr_t hdr;
 
   if (NULL == packet || NULL == plen)
     return NULL;
 
   packet -= sizeof (sctp_cmn_hdr_t);
-  hdr = packet;
 
-  hdr->check = 0;
-  hdr->srcp = htons (srcport);
-  hdr->dstp = htons (dstport);
-  hdr->tag = tag;
+  hdr.check = 0;
+  hdr.srcp = htons (srcport);
+  hdr.dstp = htons (dstport);
+  hdr.tag = tag;
+
+  memcpy (packet, &hdr, sizeof (sctp_cmn_hdr_t));
 
   *plen += sizeof (sctp_cmn_hdr_t);
 
-  hdr->check = generate_crc32c (packet, *plen);
+  ((sctp_cmn_hdr_t *) packet)->check = generate_crc32c (packet, *plen);
 
   return packet;
 }

@@ -32,10 +32,10 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         generate_crc32c.c
         create_client.c
         create_server.c
-        ../include/get_random.h
+        ../include/random.h
         get_random_u32.c
         get_random_u64.c
-        get_random.c
+        random.c
         ../include/checks.h
         fix_check.c
         fix_check_ip_tcp.c
@@ -77,6 +77,10 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         ../include/ring_buffer.h
         init_ring_buffer.c
         free_ring_buffer.c
+        generate_random_buffer.c
+        get_random_from_buffer_u32.c
+        get_random_from_buffer_u64.c
+        get_random_from_buffer_u16.c
 )
 
 add_executable(src ${SOURCES})

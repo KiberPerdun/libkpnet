@@ -4,9 +4,9 @@
 
 #include "checks.h"
 #include "eth.h"
-#include "get_random.h"
 #include "if_packet.h"
 #include "netlink.h"
+#include "random.h"
 #include "types.h"
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -70,10 +70,16 @@ create_server ()
       goto cleanup;
     }
 
+  if (!eth)
+    goto cleanup;
+
   recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_init_ack_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
+
+  if (!eth)
+    goto cleanup;
 
   recv_packet (eth->fd, if_ip_sctp, meta);
   memcpy (frame->state, meta->add, meta->add_len);

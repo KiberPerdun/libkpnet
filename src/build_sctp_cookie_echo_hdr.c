@@ -2,8 +2,8 @@
 // Created by KiberPerdun on 7/20/25.
 //
 
-#include "get_random.h"
 #include "if_packet.h"
+#include "random.h"
 
 frame_data_t *
 build_sctp_cookie_echo_hdr (frame_data_t *frame)
