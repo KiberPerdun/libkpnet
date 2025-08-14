@@ -81,6 +81,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         get_random_from_buffer_u32.c
         get_random_from_buffer_u64.c
         get_random_from_buffer_u16.c
+        hmac_md5.c
 )
 
 add_executable(src ${SOURCES})

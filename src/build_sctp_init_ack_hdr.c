@@ -17,7 +17,7 @@ build_sctp_init_ack_hdr (frame_data_t *frame)
   meta->init_tag = get_random_u32 ();
   meta->tsn = get_random_u32 ();
 
-  frame->packet += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_ack_hdr_t) + sizeof (sctp_cookie_t) + sizeof (cookie_t) + sizeof (u32);
+  frame->packet += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_ack_hdr_t) + sizeof (sctp_cookie_t) + sizeof (cookie_t) + 16;
   frame->packet = build_sctp_cookie_param_raw (frame->packet, &frame->plen, (cookie_t *) meta);
   frame->packet = build_sctp_init_ack_hdr_raw (frame->packet, &frame->plen, meta->init_tag, meta->src_arwnd, meta->src_os, meta->src_mis, meta->tsn);
   frame->packet = build_sctp_fld_hdr_raw (frame->packet, &frame->plen, SCTP_INIT_ACK, 0, frame->plen + sizeof (sctp_fld_hdr_t));

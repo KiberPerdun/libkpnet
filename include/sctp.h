@@ -265,4 +265,9 @@ frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
+
+#define HMAC_MD5_KEY_LEN 16
+
+u0 hmac_md5 (u8 *text, i32 text_len, u8 *key, i32 key_len, caddr_t digest);
+
 #endif // LIBKPNET_SCTP_H

@@ -4,8 +4,8 @@ project(libkpnet C)
 set(PROJECT_NAME libkpnet)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ")
-set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -march=native -O3 -flto -fno-plt")
 
 include_directories(

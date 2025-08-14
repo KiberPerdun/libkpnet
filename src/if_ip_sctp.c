@@ -85,13 +85,31 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
         if (m->state == SCTP_LISTEN || m->state == SCTP_INIT_RECEIVED)
           {
             sctp_fld_hdr_t *cookie_echo = &sctp->fld;
-            if (ntohs (cookie_echo->len) < sizeof (cookie_t) + sizeof (sctp_cookie_t) + sizeof (u32))
+            if (ntohs (cookie_echo->len) < sizeof (cookie_t) + sizeof (sctp_cookie_t) + HMAC_MD5_KEY_LEN)
               return NULL;
 
             if ((m->add = calloc (sizeof (if_ip_sctp_meta_t), 1)) == NULL)
               return NULL;
 
             memcpy (m->add, cookie_echo + 1, sizeof (cookie_t));
+
+            u8 key[16] = {
+              0xC9, 0xAB, 0x02, 0x9C, 0x92, 0xBF, 0x47, 0xF3,
+              0xC9, 0xAB, 0x02, 0x9C, 0x92, 0xBF, 0x47, 0xF3
+            };
+
+            u8 digest[16];
+            u8 res;
+
+            hmac_md5 ((u8 *) (cookie_echo + 1), sizeof (cookie_t), key, 16, digest);
+
+            res = 0;
+            for (int i = 0; i < HMAC_MD5_KEY_LEN; ++i)
+                res |= digest[i] ^ *((u8 *) (cookie_echo + 1) + sizeof(cookie_t) + i);
+
+            if (res != 0)
+              printf ("HMAC INVALID");
+
             break;
           }
         return NULL;

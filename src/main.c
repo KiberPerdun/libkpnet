@@ -1,5 +1,6 @@
 #include "dhcp.h"
 #include "eth.h"
+#include "md5.h"
 #include "pthread.h"
 #include "ring_buffer.h"
 #include "sys/mman.h"
@@ -16,6 +17,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+
 i32
 main (u0)
 {
@@ -23,23 +25,6 @@ main (u0)
 
 #include "netlink.h"
 #include "md5.h"
-  /*
-  const char* text1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567899";
-  MD5_CTX context;
-  u8 digest[16];
-
-  MD5Init (&context);
-  MD5Update (&context, (const u8 *)text1, strlen(text1));
-  MD5Final (digest, &context);
-
-  printf ("Строка: %s\n", text1);
-  printf ("MD5 хеш: ");
-  for (i32 i = 0; i < 16; ++i)
-    printf("%02x", digest[i]);
-  printf("\n\n");
-
-  return 0;
-  */
 
   ring_buffer_t *rb = init_ring_buffer ();
   free_ring_buffer (rb);
