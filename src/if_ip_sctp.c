@@ -25,6 +25,9 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
   if (check_check_ip != (u16)~(u16)ip_checksum ((u16 *)ip, sizeof (ipv4_t)))
     return NULL;
 
+  if (ntohs (ip->len) < sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t))
+    return NULL;
+
   u32 check_check_sctp = sctp->cmn.check;
   sctp->cmn.check = 0;
   if (check_check_sctp != generate_crc32c ((const u8 *)sctp, sizeof (sctp_cmn_hdr_t) + ntohs (sctp->fld.len)))

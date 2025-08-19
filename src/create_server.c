@@ -8,9 +8,11 @@
 #include "netlink.h"
 #include "random.h"
 #include "types.h"
+
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <threads.h>
 #include <time.h>
@@ -45,6 +47,15 @@ create_server ()
 
   eth = eth_open ("libkpnet_s");
 
+  ring_buffer_t *rb = init_ring_buffer ();
+  rb = fill_ring_buffer (rb, 2048);
+  eth->rb = rb;
+
+  pthread_t receiver;
+  if (pthread_create (&receiver, NULL, recv_packet_to_ring_buffer, eth) != 0)
+    return 0;
+
+
   src_port = 80;
 
   u32 src_ip = inet_addr ("192.168.1.3");
@@ -73,32 +84,32 @@ create_server ()
   if (!eth)
     goto cleanup;
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  sleep (1);
+
+  u0 *buffer = get_next_address_ring_buffer_consumer (rb);
+  for (; !if_ip_sctp (buffer, 2048, meta);)
+    buffer = get_next_address_ring_buffer_consumer (rb);
+
+  //recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_init_ack_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
-  if (!eth)
-    goto cleanup;
+  buffer = get_next_address_ring_buffer_consumer (rb);
+  for (; !if_ip_sctp (buffer, 2048, meta);)
+    buffer = get_next_address_ring_buffer_consumer (rb);
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  //recv_packet (eth->fd, if_ip_sctp, meta);
   memcpy (frame->state, meta->add, meta->add_len);
   frame = build_sctp_cookie_ack_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
-  /*
+  pthread_cancel (receiver);
+  if (pthread_join (receiver, NULL) != 0)
+    ;
 
-  frame->sync = NULL;
-  frame = build_mac_raw (frame, "libkpnet_c", "libkpnet_s", ETHERTYPE_IP);
-  frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 60);
-  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port,
-  meta->src_ver_tag); frame = build_sctp_init_ack_hdr (frame, meta->src_arwnd,
-  meta->src_os,  meta->src_mis, meta); frame = fix_check_ip_sctp (frame,
-  MAX_PACKET_LEN);
-
-  eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
-  */
+  free_ring_buffer (rb);
 
 cleanup:
   eth_close (eth);

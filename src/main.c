@@ -27,7 +27,11 @@ main (u0)
 #include "md5.h"
 
   ring_buffer_t *rb = init_ring_buffer ();
+  rb = fill_ring_buffer (rb, 2048);
   free_ring_buffer (rb);
+
+  //delete_if (get_ifid (CLIENT_INAME));
+  //delete_if (get_ifid (SERVER_INAME));
 
   create_veth_pair (CLIENT_INAME, SERVER_INAME);
   /* delete_if (get_ifid ("libkpnet_c")); */

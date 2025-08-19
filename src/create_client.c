@@ -39,7 +39,7 @@ create_client ()
 {
   /* init */
   connection_sctp_state_t *state = NULL;
-  u0 *packet = NULL;
+  u0 *packet = NULL, *tx_ring;
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
@@ -66,6 +66,14 @@ create_client ()
   frame->state = state;
 
   eth = eth_open ("libkpnet_c");
+
+  ring_buffer_t *rb = init_ring_buffer ();
+  rb = fill_ring_buffer (rb, 2048);
+  eth->rb = rb;
+
+  pthread_t receiver;
+  if (pthread_create (&receiver, NULL, recv_packet_to_ring_buffer, eth) != 0)
+    return 0;
 
   dst_port = 80;
   src_port = get_random_u16 ();
@@ -101,6 +109,8 @@ create_client ()
 
   generate_random_buffer ();
 
+  sleep (1);
+
   BENCH_START ();
   frame = build_sctp_init_hdr (frame);
   BENCH_END ("build_sctp_init_hdr", 1);
@@ -110,35 +120,20 @@ create_client ()
   if (!eth)
     goto cleanup;
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  u0 *buffer = get_next_address_ring_buffer_consumer (rb);
+  for (; !if_ip_sctp (buffer, 2048, meta);)
+    buffer = get_next_address_ring_buffer_consumer (rb);
+
+  // recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_cookie_echo_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
-  /*
-  frame = build_mac_raw (frame, "libkpnet_s", "libkpnet_c", ETHERTYPE_IP);
-  frame = build_ip_raw (frame, meta->src_ip, meta->dst_ip, IPPROTO_SCTP, 52);
-  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port, 0);
-  frame = build_sctp_init_hdr (frame, get_random_u32 (), meta->src_arwnd,
-  meta->src_os, meta->dst_os, get_random_u32 ()); frame = fix_check_ip_sctp
-  (frame, MAX_PACKET_LEN);
+  pthread_cancel (receiver);
+  if (pthread_join (receiver, NULL) != 0)
+    ;
 
-  eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
-
-  recv_packet (eth->fd, if_ip_sctp, meta);
-
-  frame->packet -= sizeof (sctp_cmn_hdr_t) + sizeof (sctp_init_hdr_t) + sizeof
-  (sctp_fld_hdr_t); frame->plen += sizeof (sctp_cmn_hdr_t) + sizeof
-  (sctp_init_hdr_t)  + sizeof (sctp_fld_hdr_t);
-
-  frame = build_sctp_cmn_hdr_raw (frame, meta->src_port, meta->dst_port,
-  meta->src_ver_tag); frame = build_sctp_cookie_echo_hdr (frame, meta); frame =
-  fix_check_ip_sctp (frame, MAX_PACKET_LEN);
-
-  eth_send (eth, packet, MAX_PACKET_LEN - frame->plen);
-
-  free (meta->add);
-  */
+  free_ring_buffer (rb);
 
 cleanup:
   eth_close (eth);

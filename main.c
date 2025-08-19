@@ -1,8 +1,15 @@
-#include "stdio.h"
-#include "stdlib.h"
+/* Simple XDP program that passes all packets */
+#include <linux/bpf.h>
 
-int
-main (void)
+#ifndef __section
+# define __section(NAME)                  \
+__attribute__((section(NAME), used))
+#endif
+
+__section("prog")
+int xdp_pass(struct xdp_md *ctx)
 {
-  return 0;
+  return XDP_PASS;
 }
+
+char __license[] __section("license") = "GPL";

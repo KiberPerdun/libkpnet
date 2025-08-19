@@ -51,7 +51,6 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         build_sctp_init_hdr.c
         build_sctp_fld_hdr_raw.c
         fix_check_ip_sctp.c
-        setup_bpf_filter.c
         recv_packet.c
         if_ip_sctp.c
         if_ip_tcp.c
@@ -82,6 +81,12 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         get_random_from_buffer_u64.c
         get_random_from_buffer_u16.c
         hmac_md5.c
+        xdp_open.c
+        xdp_send.c
+        fill_ring_buffer.c
+        get_next_address_ring_buffer_producer.c
+        get_next_address_ring_buffer_consumer.c
+        recv_packet_to_ring_buffer.c
 )
 
 add_executable(src ${SOURCES})

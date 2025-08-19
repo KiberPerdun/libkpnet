@@ -17,8 +17,8 @@ init_ring_buffer ()
 
   memset (rb->buffer, 0, sizeof (rb->buffer));
 
-  rb->head = 0;
-  rb->tail = 0;
+  rb->consumer = 0;
+  rb->productor = 0;
 
   return rb;
 }

@@ -39,7 +39,7 @@ eth_open (const char *device)
   if (!eth)
     return eth;
 
-  if ((eth->fd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 1)
+  if ((eth->fd = socket (AF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 1)
     return eth_close (eth);
 
   _strlcpy (eth->ifr.ifr_name, device, sizeof (eth->ifr.ifr_name));

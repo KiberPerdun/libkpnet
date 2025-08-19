@@ -12,8 +12,8 @@ free_ring_buffer (ring_buffer_t *rb)
   if (!rb)
     return NULL;
 
-  for (i16 i = 0; i < SIZE; ++i)
-    free (rb->buffer[i]);
+  for (i32 i = 0; i < SIZE; ++i)
+    free (rb->buffer[i % SIZE]);
 
   free (rb);
 

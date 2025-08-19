@@ -9,7 +9,7 @@ build_sctp_init_hdr_raw (u0 *packet, u16 *plen, u32 tag, u32 a_rwnd, u16 os, u16
 {
   sctp_init_hdr_t hdr;
 
-  if (NULL == packet || NULL == plen)
+  if (__builtin_expect (NULL == packet, 0) || __builtin_expect (NULL == plen, 0))
       return NULL;
 
   packet -= sizeof (sctp_init_hdr_t);
