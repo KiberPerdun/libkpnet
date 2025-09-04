@@ -47,6 +47,7 @@ typedef struct frame_sync_ip_tcp
 typedef struct frame_data
 {
   u0 *packet;
+  u0 *prefill;
   u16 plen;
   PROTO_STACK_TYPE_T proto;
   u0 *sync;
@@ -205,4 +206,6 @@ bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
 u0*  if_ip_tcp (u0 *packet, u16 size, u0 *meta);
 u0*  if_ip_sctp (u0 *packet, u16 size, u0 *meta);
+
+frame_data_t *prefill_mac_ip_sctp_ (frame_data_t *frame);
 #endif // LIBKPNET_IF_PACKET_H

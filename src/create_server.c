@@ -51,10 +51,11 @@ create_server ()
   rb = fill_ring_buffer (rb, 2048);
   eth->rb = rb;
 
+  /*
   pthread_t receiver;
   if (pthread_create (&receiver, NULL, recv_packet_to_ring_buffer, eth) != 0)
     return 0;
-
+    */
 
   src_port = 80;
 
@@ -84,30 +85,34 @@ create_server ()
   if (!eth)
     goto cleanup;
 
-  sleep (1);
-
+  /*
   u0 *buffer = get_next_address_ring_buffer_consumer (rb);
   for (; !if_ip_sctp (buffer, 2048, meta);)
     buffer = get_next_address_ring_buffer_consumer (rb);
+    */
 
-  //recv_packet (eth->fd, if_ip_sctp, meta);
+  recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_init_ack_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
+  /*
   buffer = get_next_address_ring_buffer_consumer (rb);
   for (; !if_ip_sctp (buffer, 2048, meta);)
     buffer = get_next_address_ring_buffer_consumer (rb);
+    */
 
-  //recv_packet (eth->fd, if_ip_sctp, meta);
+  recv_packet (eth->fd, if_ip_sctp, meta);
   memcpy (frame->state, meta->add, meta->add_len);
   frame = build_sctp_cookie_ack_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
+  /*
   pthread_cancel (receiver);
   if (pthread_join (receiver, NULL) != 0)
     ;
+  */
 
   free_ring_buffer (rb);
 

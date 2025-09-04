@@ -31,7 +31,7 @@ build_ip_raw (u0 *packet, u16 *plen, u32 src, u32 dst, u8 proto)
 
   memcpy (packet, &hdr, sizeof (ipv4_t));
 
-  ((ipv4_t *) packet)->check = ~(u16)ip_checksum ((u16 *) &hdr, sizeof (ipv4_t));
+  ((ipv4_t *) packet)->check = ~(u16) ip_checksum ((u16 *) &hdr, sizeof (ipv4_t));
 
   return packet;
 }

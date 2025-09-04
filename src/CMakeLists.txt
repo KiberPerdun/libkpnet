@@ -87,6 +87,11 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         get_next_address_ring_buffer_producer.c
         get_next_address_ring_buffer_consumer.c
         recv_packet_to_ring_buffer.c
+        prefill_mac_ip_sctp_.c
+        build_prefilled_sctp_init_hdr.c
+        ../include/prefilled.h
+        prefill_mac_ip_sctp.c
+        build_prefilled_mac_ip_sctp_init_hdr.c
 )
 
 add_executable(src ${SOURCES})

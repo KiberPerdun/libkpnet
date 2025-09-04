@@ -7,6 +7,7 @@
 #include "if_packet.h"
 #include "ipv4.h"
 #include "netlink.h"
+#include "prefilled.h"
 #include "random.h"
 #include "ring_buffer.h"
 #include "tcp.h"
@@ -39,7 +40,7 @@ create_client ()
 {
   /* init */
   connection_sctp_state_t *state = NULL;
-  u0 *packet = NULL, *tx_ring;
+  u0 *packet = NULL, *tx_ring, *prefill = NULL;
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
@@ -53,12 +54,17 @@ create_client ()
   if (!((state = aligned_alloc (64, sizeof (connection_sctp_state_t) + 63 & ~63))))
     goto cleanup;
 
+  prefill = calloc (1, MAX_PACKET_LEN);
+  if (!prefill)
+    goto cleanup;
+
   memset (packet, 0, MAX_PACKET_LEN);
   _mm_prefetch (frame, _MM_HINT_T0);
   _mm_prefetch (packet, _MM_HINT_T0);
   _mm_prefetch (state, _MM_HINT_T0);
 
   frame->packet = packet;
+  frame->prefill = prefill;
   frame->plen = MAX_PACKET_LEN;
 
   atomic_init (&state->packet_proccessing, false);
@@ -66,14 +72,6 @@ create_client ()
   frame->state = state;
 
   eth = eth_open ("libkpnet_c");
-
-  ring_buffer_t *rb = init_ring_buffer ();
-  rb = fill_ring_buffer (rb, 2048);
-  eth->rb = rb;
-
-  pthread_t receiver;
-  if (pthread_create (&receiver, NULL, recv_packet_to_ring_buffer, eth) != 0)
-    return 0;
 
   dst_port = 80;
   src_port = get_random_u16 ();
@@ -109,34 +107,36 @@ create_client ()
 
   generate_random_buffer ();
 
-  sleep (1);
+  frame = prefill_mac_ip_sctp (frame);
+  BENCH_START ()
+  frame = build_prefilled_mac_ip_sctp_init_hdr (frame);
+  BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
+  eth_send (eth, prefill, frame->plen);
 
+  /*
+  frame = prefill_mac_ip_sctp_ (frame);
+  BENCH_START ()
+  frame = build_prefilled_sctp_init_hdr (frame);
+  BENCH_END ("build_prefilled_sctp_init_hdr", 1)
+  eth_send (eth, prefill, frame->plen);
+   */
+
+  /*
   BENCH_START ();
   frame = build_sctp_init_hdr (frame);
   BENCH_END ("build_sctp_init_hdr", 1);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
 
-  if (!eth)
-    goto cleanup;
-
-  u0 *buffer = get_next_address_ring_buffer_consumer (rb);
-  for (; !if_ip_sctp (buffer, 2048, meta);)
-    buffer = get_next_address_ring_buffer_consumer (rb);
-
-  // recv_packet (eth->fd, if_ip_sctp, meta);
+  recv_packet (eth->fd, if_ip_sctp, meta);
   frame = build_sctp_cookie_echo_hdr (frame);
   eth_send (eth, frame->packet, frame->plen);
   frame->plen = 0;
-
-  pthread_cancel (receiver);
-  if (pthread_join (receiver, NULL) != 0)
-    ;
-
-  free_ring_buffer (rb);
+   */
 
 cleanup:
   eth_close (eth);
+  free (prefill);
   free (meta);
   free (state);
   free (packet);

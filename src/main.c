@@ -24,14 +24,6 @@ main (u0)
   pthread_t client, server;
 
 #include "netlink.h"
-#include "md5.h"
-
-  ring_buffer_t *rb = init_ring_buffer ();
-  rb = fill_ring_buffer (rb, 2048);
-  free_ring_buffer (rb);
-
-  //delete_if (get_ifid (CLIENT_INAME));
-  //delete_if (get_ifid (SERVER_INAME));
 
   create_veth_pair (CLIENT_INAME, SERVER_INAME);
   /* delete_if (get_ifid ("libkpnet_c")); */
@@ -46,13 +38,13 @@ main (u0)
 
   if (pthread_create (&client, NULL, create_client, NULL) != 0)
     return 0;
-
+/*
   if (pthread_create (&server, NULL, create_server, NULL) != 0)
     return 0;
-
+*/
   if (pthread_join (client, NULL) != 0)
     return 0;
-
+/*
   if (pthread_join (server, NULL) != 0)
-    return 0;
+    return 0;*/
 }

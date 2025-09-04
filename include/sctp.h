@@ -262,6 +262,7 @@ u0 *build_sctp_cookie_echo_hdr_raw (u0 *packet, u16 *plen, u0 *cookie, u16 cooki
 u0 *build_sctp_cookie_param_raw (u0 *packet, u16 *plen, cookie_t *cookie);
 
 frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
+frame_data_t *build_prefilled_sctp_init_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
