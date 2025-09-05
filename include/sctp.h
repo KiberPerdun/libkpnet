@@ -247,6 +247,7 @@ typedef struct sctp_hdr
 } sctp_t;
 
 u32 generate_crc32c (const u8 *buffer, u32 length);
+u64 generate_crc32c_on_crc32c (const u8 *buffer, u32 length, u64 crc);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);
 /* frame_data_t *build_sctp_cmn_hdr_raw (frame_data_t *frame, u16 srcport, u16 dstport, u32 tag); */
 /* frame_data_t *build_sctp_fld_hdr_raw (frame_data_t *frame, u8 type, u8 flags, u16 len); */

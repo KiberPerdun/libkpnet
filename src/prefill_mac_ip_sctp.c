@@ -6,7 +6,8 @@
 #include "prefilled.h"
 #include "random.h"
 
-frame_data_t *prefill_mac_ip_sctp (frame_data_t *frame)
+frame_data_t *
+prefill_mac_ip_sctp (frame_data_t *frame)
 {
   if_ip_sctp_meta_t *meta;
   sctp_cmn_hdr_t cmn;
@@ -24,6 +25,7 @@ frame_data_t *prefill_mac_ip_sctp (frame_data_t *frame)
   cmn.srcp = htons (meta->src_port);
   cmn.dstp = htons (meta->dst_port);
   cmn.tag = 0;
+  cmn.check = 0;
 
   /* building IPv4 header */
   ip.ihl = 5;
@@ -44,9 +46,8 @@ frame_data_t *prefill_mac_ip_sctp (frame_data_t *frame)
   u16 type_be = htons (ETHERTYPE_IP);
   memcpy (packet + 12, &type_be, 2);
 
-  memcpy (packet + (frame->plen += sizeof (mac_t)), &ip, sizeof (ipv4_t));
-  memcpy (packet + (frame->plen += sizeof (ipv4_t)), &cmn, sizeof (sctp_cmn_hdr_t ));
-  frame->plen += sizeof (sctp_cmn_hdr_t);
+  memcpy (packet + sizeof (mac_t), &ip, sizeof (ipv4_t));
+  memcpy (packet + sizeof (ipv4_t) + sizeof (mac_t), &cmn, sizeof (sctp_cmn_hdr_t ));
 
   return frame;
 }

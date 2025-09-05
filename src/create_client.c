@@ -113,6 +113,11 @@ create_client ()
   BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
   eth_send (eth, prefill, frame->plen);
 
+  recv_packet (eth->fd, if_ip_sctp, meta);
+  frame = build_sctp_cookie_echo_hdr (frame);
+  eth_send (eth, frame->packet, frame->plen);
+  frame->plen = 0;
+
   /*
   frame = prefill_mac_ip_sctp_ (frame);
   BENCH_START ()

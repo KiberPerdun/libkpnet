@@ -38,13 +38,13 @@ main (u0)
 
   if (pthread_create (&client, NULL, create_client, NULL) != 0)
     return 0;
-/*
+
   if (pthread_create (&server, NULL, create_server, NULL) != 0)
     return 0;
-*/
+
   if (pthread_join (client, NULL) != 0)
     return 0;
-/*
+
   if (pthread_join (server, NULL) != 0)
-    return 0;*/
+    return 0;
 }

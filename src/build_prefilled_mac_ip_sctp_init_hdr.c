@@ -6,15 +6,19 @@
 #include "prefilled.h"
 #include "random.h"
 
-frame_data_t *build_prefilled_mac_ip_sctp_init_hdr (frame_data_t *frame)
+frame_data_t *
+build_prefilled_mac_ip_sctp_init_hdr (frame_data_t *frame)
 {
   if_ip_sctp_meta_t *meta;
   sctp_cmn_hdr_t *cmn;
   u0 *packet;
   ipv4_t *ip;
+  u32 chk;
 
   if (__builtin_expect (frame == NULL, 0) ||  __builtin_expect (frame->prefill == NULL || frame->state == NULL, 0))
     return NULL;
+
+  frame->plen += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t);
 
   meta = frame->state;
   packet = frame->prefill;
@@ -23,12 +27,14 @@ frame_data_t *build_prefilled_mac_ip_sctp_init_hdr (frame_data_t *frame)
   frame->prefill = build_sctp_fld_hdr_raw (frame->prefill, &frame->plen, SCTP_INIT, 0, sizeof (sctp_init_hdr_t) + sizeof (sctp_fld_hdr_t));
   cmn = frame->prefill - sizeof (sctp_cmn_hdr_t);
   ip = (u0 *) cmn - sizeof (ipv4_t);
+  chk = ip->check;
   ip->len = htons (frame->plen - sizeof (mac_t));
-  ip->check += htons (0) - ip->len;
-  if (ip->check > 0xFFFF)
-    ip->check = (ip->check & 0xFFFF) + (ip->check >> 16);
+  chk += htons (0) - ip->len;
+  if (chk > 0xFFFF)
+    chk = (chk & 0xFFFF) + (chk >> 16);
+  ip->check = chk;
 
-  cmn->check = generate_crc32c ((const u8 *) cmn, sizeof (sctp_cmn_hdr_t ) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_hdr_t));
+  cmn->check = ~(u32) generate_crc32c_on_crc32c ((const u8 *) cmn, sizeof (sctp_cmn_hdr_t ) + sizeof (sctp_fld_hdr_t) + sizeof (sctp_init_hdr_t), 0xFFFFFFFF);
 
   frame->prefill = packet;
   return frame;

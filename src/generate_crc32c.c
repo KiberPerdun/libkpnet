@@ -22,24 +22,34 @@ generate_crc32c (const u8 *data, u32 length)
 
   for (; i + 8 <= length; i += 8) {
       memcpy (&chunk, data + i, 8);
-
-      asm volatile(
-          "crc32q %1, %0"
-          : "+r"(crc)
-          : "r"(chunk)
-      );
+      crc = __builtin_ia32_crc32di (crc, chunk);
     }
 
-  for (; i < length; ++i) {
-      asm volatile(
-          "crc32b %1, %0"
-          : "+r"(crc)
-          : "r"(((const u8*)data)[i])
-      );
-    }
+  for (; i < length; ++i)
+    crc = __builtin_ia32_crc32qi (crc, chunk);
 
-  return ~(u32)crc;
+  return ~(u32) crc;
 }
+
+__attribute__ ((hot)) u64
+generate_crc32c_on_crc32c (const u8 *data, u32 length, u64 crc)
+{
+  u64 chunk;
+  i64 i;
+
+  i = 0;
+
+  for (; i + 8 <= length; i += 8) {
+      memcpy (&chunk, data + i, 8);
+      crc = __builtin_ia32_crc32di (crc, chunk);
+    }
+
+  for (; i < length; ++i)
+    crc = __builtin_ia32_crc32qi (crc, chunk);
+
+  return crc;
+}
+
 #else
 
 #define CRC32C(c,d) (c=(c>>8)^crc_c[(c^(d))&0xFF])
