@@ -23,7 +23,6 @@ typedef struct eth_handle
   i32 fd;
   struct ifreq ifr;
   struct sockaddr_ll sll;
-  ring_buffer_t *rb;
 } eth_t;
 
 typedef struct xdp_mmap_offsets xdp_mmap_offsets_t;
@@ -38,6 +37,14 @@ typedef struct xdp_socket
 
   xdp_mmap_offsets_t offsets;
 } xdp_t;
+
+typedef struct
+{
+  ringbuf_t *rb;
+  eth_t *eth;
+} rb_arg_t;
+
+_Noreturn u0 *eth_send_rb (u0 *arg);
 
 eth_t *eth_open (const char *device);
 eth_t *eth_close (eth_t *eth);

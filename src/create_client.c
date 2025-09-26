@@ -4,6 +4,7 @@
 
 #include "checks.h"
 #include "eth.h"
+#include "hwinfo.h"
 #include "if_packet.h"
 #include "ipv4.h"
 #include "netlink.h"
@@ -18,6 +19,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <thread_db.h>
 #include <threads.h>
 #include <time.h>
 
@@ -41,37 +43,48 @@ create_client ()
   /* init */
   connection_sctp_state_t *state = NULL;
   u0 *packet = NULL, *tx_ring, *prefill = NULL;
+  ringbuf_t *rb_tx, *rb_rx;
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
 
-  if (!((frame = aligned_alloc (64, sizeof (frame_data_t) + 63 & ~63))))
+  thread_t cons, prod;
+
+  if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
-  if (!((packet = aligned_alloc (64, MAX_PACKET_LEN + 63 & ~63))))
+  if (!((packet = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
-  if (!((state = aligned_alloc (64, sizeof (connection_sctp_state_t) + 63 & ~63))))
+  if (!((state = aligned_alloc (CACHELINE_SIZE, sizeof (connection_sctp_state_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
-  prefill = calloc (1, MAX_PACKET_LEN);
-  if (!prefill)
+  if (!((prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
-  memset (packet, 0, MAX_PACKET_LEN);
-  _mm_prefetch (frame, _MM_HINT_T0);
-  _mm_prefetch (packet, _MM_HINT_T0);
-  _mm_prefetch (state, _MM_HINT_T0);
+  memset (prefill, 0, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
+  memset (packet, 0, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
 
   frame->packet = packet;
   frame->prefill = prefill;
   frame->plen = MAX_PACKET_LEN;
-
-  atomic_init (&state->packet_proccessing, false);
-  atomic_init (&state->shutdown_requested, false);
   frame->state = state;
 
-  eth = eth_open ("libkpnet_c");
+  eth = eth_open (CLIENT_INAME);
+
+  rb_arg_t arg_tx;
+  arg_tx.eth = eth;
+  rb_tx = create_ringbuf (1024);
+  arg_tx.rb = rb_tx;
+  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
+    return 0;
+
+  rb_arg_t arg_rx;
+  arg_rx.eth = eth;
+  rb_rx = create_ringbuf (1024);
+  arg_rx.rb = rb_rx;
+  if (pthread_create (&prod, NULL, recv_packet, &arg_rx) != 0)
+    return 0;
 
   dst_port = 80;
   src_port = get_random_u16 ();
@@ -111,33 +124,21 @@ create_client ()
   BENCH_START ()
   frame = build_prefilled_mac_ip_sctp_init_hdr (frame);
   BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
-  eth_send (eth, prefill, frame->plen);
+  push_ringbuf (rb_tx, prefill, frame->plen);
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  ringbuf_cell_t *cell;
+  do
+    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
+      ;
+
+  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+
   frame = build_sctp_cookie_echo_hdr (frame);
-  eth_send (eth, frame->packet, frame->plen);
+  push_ringbuf (rb_tx, frame->packet, frame->plen);
   frame->plen = 0;
 
-  /*
-  frame = prefill_mac_ip_sctp_ (frame);
-  BENCH_START ()
-  frame = build_prefilled_sctp_init_hdr (frame);
-  BENCH_END ("build_prefilled_sctp_init_hdr", 1)
-  eth_send (eth, prefill, frame->plen);
-   */
-
-  /*
-  BENCH_START ();
-  frame = build_sctp_init_hdr (frame);
-  BENCH_END ("build_sctp_init_hdr", 1);
-  eth_send (eth, frame->packet, frame->plen);
-  frame->plen = 0;
-
-  recv_packet (eth->fd, if_ip_sctp, meta);
-  frame = build_sctp_cookie_echo_hdr (frame);
-  eth_send (eth, frame->packet, frame->plen);
-  frame->plen = 0;
-   */
+  if (pthread_join (cons, NULL) != 0)
+    return 0;
 
 cleanup:
   eth_close (eth);
@@ -146,5 +147,6 @@ cleanup:
   free (state);
   free (packet);
   free (frame);
+  return NULL;
 }
 #undef MAX_PACKET_LEN

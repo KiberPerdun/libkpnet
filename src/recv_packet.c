@@ -18,9 +18,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-u0
-recv_packet (i32 fd, ifcall filter, u0 *meta)
+_Noreturn u0 *
+recv_packet (u0 *a)
 {
+  rb_arg_t *arg = a;
   i64 data_size;
   u0 *buffer;
 
@@ -28,7 +29,7 @@ recv_packet (i32 fd, ifcall filter, u0 *meta)
 
   for (;;)
     {
-      data_size = recv (fd, buffer, 65536, MSG_DONTWAIT);
+      data_size = recv (arg->eth->fd, buffer, 65536, MSG_DONTWAIT);
       if (data_size < 0)
         {
           if (EAGAIN == errno || EWOULDBLOCK == errno)
@@ -36,11 +37,10 @@ recv_packet (i32 fd, ifcall filter, u0 *meta)
 
           perror ("recv");
           free (buffer);
-          return;
         }
 
-      if (filter (buffer, data_size, meta))
-          break;
+      push_ringbuf (arg->rb, buffer, data_size);
+      buffer = malloc (65536);
     }
 
   free (buffer);

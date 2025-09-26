@@ -78,6 +78,7 @@ typedef struct frame_data
 #include "immintrin.h"
 #include <sys/mman.h>
 #include <bits/mman-map-flags-generic.h>
+#include <sched.h>
 #include "sctp.h"
 
 typedef struct ipv4_hdr {
@@ -196,7 +197,7 @@ typedef struct connection_sctp_state
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
 typedef u0*   (*ifcall)(u0 *, u16, u0 *);
 
-u0   recv_packet (i32 fd, ifcall filter, u0 *meta);
+_Noreturn u0 *recv_packet (u0 *arg);
 u0  *recv_packet_to_ring_buffer (u0 *eth);
 u0   recv_filtered (i32 fd, lrcall_t filter, connection_args_t * args);
 bool if_ipv4 (u0 *packet, u64 size, connection_args_t *args);

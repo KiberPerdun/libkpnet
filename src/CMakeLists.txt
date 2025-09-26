@@ -74,8 +74,6 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         ../include/md5.h
         md5.c
         ../include/ring_buffer.h
-        init_ring_buffer.c
-        free_ring_buffer.c
         generate_random_buffer.c
         get_random_from_buffer_u32.c
         get_random_from_buffer_u64.c
@@ -83,15 +81,20 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         hmac_md5.c
         xdp_open.c
         xdp_send.c
-        fill_ring_buffer.c
-        get_next_address_ring_buffer_producer.c
-        get_next_address_ring_buffer_consumer.c
         recv_packet_to_ring_buffer.c
         prefill_mac_ip_sctp_.c
         build_prefilled_sctp_init_hdr.c
         ../include/prefilled.h
         prefill_mac_ip_sctp.c
         build_prefilled_mac_ip_sctp_init_hdr.c
+        ../include/hwinfo.h
+        sctp_init.c
+        sctp_process_sctp_init.c
+        sctp_process_sctp_cookie_echo.c
+        create_ringbuf.c
+        push_ringbuf.c
+        pop_ringbuf.c
+        eth_send_rb.c
 )
 
 add_executable(src ${SOURCES})

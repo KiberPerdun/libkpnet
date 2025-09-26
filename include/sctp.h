@@ -246,6 +246,36 @@ typedef struct sctp_hdr
   } type;
 } sctp_t;
 
+typedef struct sctp_thread
+{
+  u16 id;
+  u0 *buffer;
+  u32 pos_low;
+  u32 pos_current;
+  u32 pos_high;
+  u16 *misses;
+  u16 num_misses;
+} sctp_thread_t;
+
+typedef struct sctp_association
+{
+  u16 id;
+
+  u32 ver_tag;
+  u32 init_tag;
+  u32 a_rwnd;
+  u16 os;
+  u16 mis;
+  u32 tsn;
+  u32 rtt;
+  sctp_thread_t *os_threads;
+  sctp_thread_t *mix_threads;
+} sctp_association_t;
+
+typedef i64 (*sctp_assoc) (sctp_association_t *, u0 *, u32);
+extern u0 *sctp_methods[16];
+
+u0  sctp_init ();
 u32 generate_crc32c (const u8 *buffer, u32 length);
 u64 generate_crc32c_on_crc32c (const u8 *buffer, u32 length, u64 crc);
 bool build_sctp_hdr_raw (u16 srcp, u16 dstp, u32 tag, SCTP_HDR_TYPE_T type, u16 os, u16 mis, u32 a_rwnd, u8 flags, u0 *_args);
@@ -267,6 +297,9 @@ frame_data_t *build_prefilled_sctp_init_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
+
+i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
+i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 
 #define HMAC_MD5_KEY_LEN 16
 

@@ -49,5 +49,7 @@ prefill_mac_ip_sctp (frame_data_t *frame)
   memcpy (packet + sizeof (mac_t), &ip, sizeof (ipv4_t));
   memcpy (packet + sizeof (ipv4_t) + sizeof (mac_t), &cmn, sizeof (sctp_cmn_hdr_t ));
 
+  frame->plen = sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t);
+
   return frame;
 }

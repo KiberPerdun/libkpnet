@@ -6,20 +6,27 @@
 #define RING_BUFFER_H
 
 #include "types.h"
+#include <stdatomic.h>
+#include <stdio.h>
 
-#define SIZE 1024
-
-typedef struct ring_buffer
+typedef struct ringbuf_cell
 {
-  u0 *buffer[SIZE];
-  _Atomic u32 consumer;
-  _Atomic u32 productor;
-} ring_buffer_t;
+  _Atomic u64 seq;
+  _Atomic u64 plen;
+  u0 *packet;
+} ringbuf_cell_t;
 
-ring_buffer_t *init_ring_buffer ();
-ring_buffer_t *free_ring_buffer (ring_buffer_t *rb);
-ring_buffer_t *fill_ring_buffer (ring_buffer_t *rb, u64 buf_size);
-u0 *get_next_address_ring_buffer_consumer (ring_buffer_t *rb);
-u0 *get_next_address_ring_buffer_producer (ring_buffer_t *rb);
+typedef struct ringbuf
+{
+  u64 size;
+  u64 mask;
+  _Atomic u64 head;
+  _Atomic u64 tail;
+  ringbuf_cell_t *cells;
+} ringbuf_t;
+
+ringbuf_t *create_ringbuf (u64 size);
+i64 push_ringbuf (ringbuf_t *rb, u0 *packet, u64 plen);
+ringbuf_cell_t *pop_ringbuf (ringbuf_t *rb);
 
 #endif //RING_BUFFER_H

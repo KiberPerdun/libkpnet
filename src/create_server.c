@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <thread_db.h>
 #include <threads.h>
 #include <time.h>
 
@@ -24,6 +25,8 @@ create_server ()
   /* init */
   connection_sctp_state_t *state = NULL;
   u0 *packet = NULL;
+  thread_t cons, prod;
+  ringbuf_t *rb_tx, *rb_rx;
   eth_t *eth;
   u16 src_port;
   frame_data_t *frame;
@@ -45,11 +48,20 @@ create_server ()
   frame->plen = 0;
   frame->proto = PROTO_STACK_IP_TCP;
 
-  eth = eth_open ("libkpnet_s");
+  eth = eth_open (SERVER_INAME);
+  rb_arg_t arg_tx;
+  arg_tx.eth = eth;
+  rb_tx = create_ringbuf (1024);
+  arg_tx.rb = rb_tx;
+  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
+    return 0;
 
-  ring_buffer_t *rb = init_ring_buffer ();
-  rb = fill_ring_buffer (rb, 2048);
-  eth->rb = rb;
+  rb_arg_t arg_rx;
+  arg_rx.eth = eth;
+  rb_rx = create_ringbuf (1024);
+  arg_rx.rb = rb_rx;
+  if (pthread_create (&prod, NULL, recv_packet, &arg_rx) != 0)
+    return 0;
 
   /*
   pthread_t receiver;
@@ -85,36 +97,32 @@ create_server ()
   if (!eth)
     goto cleanup;
 
-  /*
-  u0 *buffer = get_next_address_ring_buffer_consumer (rb);
-  for (; !if_ip_sctp (buffer, 2048, meta);)
-    buffer = get_next_address_ring_buffer_consumer (rb);
-    */
+  sctp_init ();
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  ringbuf_cell_t *cell;
+  do
+    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
+      ;
+
+  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+
   frame = build_sctp_init_ack_hdr (frame);
-  eth_send (eth, frame->packet, frame->plen);
+  push_ringbuf (rb_tx, frame->packet, frame->plen);
   frame->plen = 0;
 
-  /*
-  buffer = get_next_address_ring_buffer_consumer (rb);
-  for (; !if_ip_sctp (buffer, 2048, meta);)
-    buffer = get_next_address_ring_buffer_consumer (rb);
-    */
+  do
+    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
+      ;
 
-  recv_packet (eth->fd, if_ip_sctp, meta);
+  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+
   memcpy (frame->state, meta->add, meta->add_len);
   frame = build_sctp_cookie_ack_hdr (frame);
-  eth_send (eth, frame->packet, frame->plen);
+  push_ringbuf (rb_tx, frame->packet, frame->plen);
   frame->plen = 0;
 
-  /*
-  pthread_cancel (receiver);
-  if (pthread_join (receiver, NULL) != 0)
-    ;
-  */
-
-  free_ring_buffer (rb);
+  if (pthread_join (cons, NULL) != 0)
+    return 0;
 
 cleanup:
   eth_close (eth);
