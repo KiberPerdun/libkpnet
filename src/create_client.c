@@ -43,7 +43,7 @@ create_client ()
   /* init */
   connection_sctp_state_t *state = NULL;
   u0 *packet = NULL, *tx_ring, *prefill = NULL;
-  ringbuf_t *rb_tx, *rb_rx;
+  ringbuf_t *rb_tx, *rb_rx, *rb_prefill;
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
@@ -74,8 +74,9 @@ create_client ()
 
   rb_arg_t arg_tx;
   arg_tx.eth = eth;
-  rb_tx = create_ringbuf (1024);
+  rb_tx = create_ringbuf (64);
   arg_tx.rb = rb_tx;
+
   if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
     return 0;
 
@@ -120,18 +121,50 @@ create_client ()
 
   generate_random_buffer ();
 
-  frame = prefill_mac_ip_sctp (frame);
+  sctp_association_t assoc;
+  assoc.id = get_random_u16 ();
+  pthread_spin_init (&assoc.lock, PTHREAD_PROCESS_PRIVATE);
+  /*
+  pthread_spin_lock(&lock);
+  pthread_spin_unlock(&lock);
+  pthread_spin_destroy(&lock);
+   */
+  ringbuf_cell_t *cell;
+
+  rb_prefill = create_ringbuf (rb_tx->size);
+  for (i32 i = 0; i < rb_tx->size; ++ i)
+    {
+      frame->prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
+      if (!frame->prefill)
+        {
+          cell = pop_ringbuf (rb_prefill);
+          for (; cell; cell = pop_ringbuf (rb_prefill))
+            {
+              free (cell->packet);
+              free (cell);
+            }
+          goto cleanup;
+        }
+
+      frame = prefill_mac_ip_sctp (frame);
+      push_ringbuf (rb_prefill, frame->prefill, frame->plen);
+      frame->plen = 0;
+    }
+
   BENCH_START ()
+  cell = pop_ringbuf (rb_prefill);
+  frame->prefill = cell->packet;
+  frame->plen = cell->plen;
   frame = build_prefilled_mac_ip_sctp_init_hdr (frame);
   BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
-  push_ringbuf (rb_tx, prefill, frame->plen);
+  push_ringbuf (rb_tx, frame->prefill, frame->plen);
 
-  ringbuf_cell_t *cell;
   do
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
 
   while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+  push_ringbuf (rb_prefill, frame->prefill, sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t));
 
   frame = build_sctp_cookie_echo_hdr (frame);
   push_ringbuf (rb_tx, frame->packet, frame->plen);

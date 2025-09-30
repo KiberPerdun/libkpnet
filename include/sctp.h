@@ -255,11 +255,14 @@ typedef struct sctp_thread
   u32 pos_high;
   u16 *misses;
   u16 num_misses;
+  u16 ssn;
+  bool active;
 } sctp_thread_t;
 
 typedef struct sctp_association
 {
   u16 id;
+  SCTP_STATUS_T status;
 
   u32 ver_tag;
   u32 init_tag;
@@ -268,8 +271,13 @@ typedef struct sctp_association
   u16 mis;
   u32 tsn;
   u32 rtt;
+  u32 rto;
+  pthread_spinlock_t lock;
   sctp_thread_t *os_threads;
-  sctp_thread_t *mix_threads;
+  sctp_thread_t *mis_threads;
+  ringbuf_t *tx_ring;
+  ringbuf_t *rx_ring;
+  ringbuf_t *retry_ring;
 } sctp_association_t;
 
 typedef i64 (*sctp_assoc) (sctp_association_t *, u0 *, u32);
@@ -294,6 +302,8 @@ u0 *build_sctp_cookie_param_raw (u0 *packet, u16 *plen, cookie_t *cookie);
 
 frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
 frame_data_t *build_prefilled_sctp_init_hdr (frame_data_t *frame);
+frame_data_t *build_prefilled_sctp_init_ack_hdr (frame_data_t *frame);
+frame_data_t *build_prefilled_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
