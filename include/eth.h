@@ -41,6 +41,7 @@ typedef struct xdp_socket
 typedef struct
 {
   ringbuf_t *rb;
+  ringbuf_t *rb_prefill;
   eth_t *eth;
 } rb_arg_t;
 

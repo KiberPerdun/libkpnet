@@ -3,6 +3,7 @@
 //
 
 #include "if_packet.h"
+#include "prefilled.h"
 
 i64
 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen)
@@ -37,7 +38,9 @@ sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen)
   assoc->os = cookie->os;
   assoc->mis = cookie->mis;
   assoc->tsn = cookie->tsn;
+  assoc->dst_ip = cookie->src_ip;
   pthread_spin_unlock (&assoc->lock);
 
+  build_prefilled_mac_ip_sctp_cookie_ack_hdr (assoc);
   return 0;
 }

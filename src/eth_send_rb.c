@@ -14,7 +14,11 @@ eth_send_rb (u0 *arg)
     {
       cell = pop_ringbuf (a->rb);
       if (cell)
-        eth_send (a->eth, cell->packet, cell->plen);
+        if (eth_send (a->eth, cell->packet, cell->plen) < 0)
+          continue;
+
+        else
+          push_ringbuf (a->rb_prefill, cell->packet, cell->plen);
 
       else
         sched_yield ();

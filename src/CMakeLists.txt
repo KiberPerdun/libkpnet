@@ -96,6 +96,9 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         pop_ringbuf.c
         eth_send_rb.c
         build_prefilled_mac_ip_sctp_cookie_echo_hdr.c
+        build_prefilled_mac_ip_sctp_init_ack_hdr.c
+        sctp_process_sctp_init_ack.c
+        build_prefilled_mac_ip_sctp_cookie_ack_hdr.c
 )
 
 add_executable(src ${SOURCES})

@@ -76,9 +76,6 @@ create_client ()
   rb_tx = create_ringbuf (64);
   arg_tx.rb = rb_tx;
 
-  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
-    return 0;
-
   rb_arg_t arg_rx;
   arg_rx.eth = eth;
   rb_rx = create_ringbuf (1024);
@@ -134,7 +131,7 @@ create_client ()
   meta->src_mis = 32;
 
   ulp->src_ip = src_ip;
-  ulp->dst_ip = dst_port;
+  ulp->dst_ip = dst_ip;
   ulp->src_port = src_port;
   ulp->dst_port = dst_port;
   ulp->src_arwnd = ~0;
@@ -182,6 +179,11 @@ create_client ()
     }
   assoc->prefilled_ring = rb_prefill;
 
+  arg_tx.rb_prefill = rb_prefill;
+
+  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
+    return 0;
+
   BENCH_START ()
   cell = pop_ringbuf (rb_prefill);
   frame->prefill = cell->packet;
@@ -195,11 +197,10 @@ create_client ()
 
   while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
-  frame = build_sctp_cookie_echo_hdr (frame);
-  push_ringbuf (rb_tx, frame->packet, frame->plen);
-  frame->plen = 0;
-
   if (pthread_join (cons, NULL) != 0)
+    return 0;
+
+  if (pthread_join (prod, NULL) != 0)
     return 0;
 
 cleanup:

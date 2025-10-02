@@ -44,6 +44,9 @@ if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc)
       {
         if (m->state == SCTP_LISTEN)
           {
+            if (sctp_process_sctp_init (assoc, (u0 *) ip, ip->len) < 0)
+              return NULL;
+
             m->dst_port = ntohs (sctp->cmn.srcp);
             m->state = SCTP_INIT_RECEIVED;
 
@@ -61,6 +64,9 @@ if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc)
       {
         if (m->state == SCTP_INIT_SENT)
           {
+            if (sctp_process_sctp_init_ack (assoc, &sctp->fld + 1, sctp->fld.len) < 0)
+              return NULL;
+
             m->dst_port = ntohs (sctp->cmn.srcp);
             m->state = SCTP_INIT_ACK_RECEIVED;
 

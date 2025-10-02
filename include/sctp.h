@@ -111,6 +111,13 @@ typedef struct sctp_cookie_echo_hdr
   u16 len;
 } sctp_cookie_echo_hdr_t;
 
+typedef struct sctp_cookie_ack_hdr
+{
+  u8 type;
+  u8 flags;
+  u16 len;
+} sctp_cookie_ack_hdr_t;
+
 typedef struct sctp_sack_hdr
 {
   u32 cum_tsn;
@@ -261,6 +268,7 @@ typedef struct sctp_ulp_config
   u32 dst_port;
 
   u32 src_arwnd;
+  u32 src_tsn;
   u16 src_os;
   u16 src_mis;
   u8 dev[6];
@@ -288,6 +296,8 @@ typedef struct sctp_association
   u32 ver_tag;
   u32 init_tag;
   u32 a_rwnd;
+  u32 dst_port;
+  u32 dst_ip;
   u16 os;
   u16 mis;
   u32 tsn;
@@ -330,6 +340,7 @@ frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
 
 i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
+i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 
 #define HMAC_MD5_KEY_LEN 16
