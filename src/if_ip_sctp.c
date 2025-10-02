@@ -6,9 +6,9 @@
 #include "if_packet.h"
 
 u0 *
-if_ip_sctp (u0 *packet, u16 size, u0 *meta)
+if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc)
 {
-  if (NULL == meta || NULL == packet)
+  if (NULL == assoc || NULL == packet || NULL == assoc->base || NULL == assoc->base->state)
     return NULL;
 
   if (size <= sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t))
@@ -16,7 +16,7 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
 
   ipv4_t *ip = packet + sizeof (mac_t);
   sctp_t *sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
-  if_ip_sctp_meta_t *m = meta;
+  if_ip_sctp_meta_t *m = assoc->base->state;
   if (ip->dest_addr != m->src_ip)
     return NULL;
 
@@ -85,8 +85,7 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
       }
     case SCTP_COOKIE_ECHO:
       {
-        sctp_association_t *a = malloc (sizeof (sctp_association_t));
-        if (sctp_process_sctp_cookie_echo (a, &sctp->fld, sctp->fld.len) < 0)
+        if (sctp_process_sctp_cookie_echo (assoc, &sctp->fld, sctp->fld.len) < 0)
           return NULL;
 
         break;
@@ -95,5 +94,5 @@ if_ip_sctp (u0 *packet, u16 size, u0 *meta)
       return NULL;
     }
 
-  return meta;
+  return assoc;
 }

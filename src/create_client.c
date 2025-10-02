@@ -42,12 +42,11 @@ create_client ()
 {
   /* init */
   connection_sctp_state_t *state = NULL;
-  u0 *packet = NULL, *tx_ring, *prefill = NULL;
+  u0 *packet = NULL, *prefill = NULL;
   ringbuf_t *rb_tx, *rb_rx, *rb_prefill;
   eth_t *eth;
   u16 src_port, dst_port;
   frame_data_t *frame;
-
   thread_t cons, prod;
 
   if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
@@ -121,9 +120,39 @@ create_client ()
 
   generate_random_buffer ();
 
-  sctp_association_t assoc;
-  assoc.id = get_random_u16 ();
-  pthread_spin_init (&assoc.lock, PTHREAD_PROCESS_PRIVATE);
+  sctp_ulp_config_t *ulp;
+  if (!((ulp = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_ulp_config_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
+    goto cleanup;
+
+  meta->state = SCTP_INIT_SENT;
+  meta->src_ip = src_ip;
+  meta->dst_ip = dst_ip;
+  meta->src_port = src_port;
+  meta->dst_port = dst_port;
+  meta->src_arwnd = ~0;
+  meta->src_os = 32;
+  meta->src_mis = 32;
+
+  ulp->src_ip = src_ip;
+  ulp->dst_ip = dst_port;
+  ulp->src_port = src_port;
+  ulp->dst_port = dst_port;
+  ulp->src_arwnd = ~0;
+  ulp->src_os = 32;
+  ulp->src_mis = 32;
+
+  sctp_association_t *assoc;
+  if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
+    goto cleanup;
+
+  assoc->id = get_random_u16 ();
+  pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
+  assoc->tx_ring = rb_tx;
+  assoc->rx_ring = rb_rx;
+  assoc->retry_ring = NULL;
+  assoc->ulp = ulp;
+  assoc->base = frame;
+  assoc->base->state = meta;
   /*
   pthread_spin_lock(&lock);
   pthread_spin_unlock(&lock);
@@ -143,6 +172,7 @@ create_client ()
               free (cell->packet);
               free (cell);
             }
+          free (frame->prefill);
           goto cleanup;
         }
 
@@ -150,21 +180,20 @@ create_client ()
       push_ringbuf (rb_prefill, frame->prefill, frame->plen);
       frame->plen = 0;
     }
+  assoc->prefilled_ring = rb_prefill;
 
   BENCH_START ()
   cell = pop_ringbuf (rb_prefill);
   frame->prefill = cell->packet;
   frame->plen = cell->plen;
-  frame = build_prefilled_mac_ip_sctp_init_hdr (frame);
+  build_prefilled_mac_ip_sctp_init_hdr (assoc);
   BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
-  push_ringbuf (rb_tx, frame->prefill, frame->plen);
 
   do
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
 
-  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
-  push_ringbuf (rb_prefill, frame->prefill, sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t));
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
   frame = build_sctp_cookie_echo_hdr (frame);
   push_ringbuf (rb_tx, frame->packet, frame->plen);
@@ -175,6 +204,8 @@ create_client ()
 
 cleanup:
   eth_close (eth);
+  free (ulp);
+  free (assoc);
   free (prefill);
   free (meta);
   free (state);

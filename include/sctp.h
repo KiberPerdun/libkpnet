@@ -246,6 +246,27 @@ typedef struct sctp_hdr
   } type;
 } sctp_t;
 
+typedef struct sctp_ulp_config
+{
+  u32 max_retrans;
+  u32 rto_initial;
+  u32 rto_min;
+  u32 rto_max;
+  u32 max_burst;
+  u32 cookie_life;
+
+  u32 src_ip;
+  u32 dst_ip;
+  u32 src_port;
+  u32 dst_port;
+
+  u32 src_arwnd;
+  u16 src_os;
+  u16 src_mis;
+  u8 dev[6];
+  u8 gateway[6];
+} sctp_ulp_config_t;
+
 typedef struct sctp_thread
 {
   u16 id;
@@ -273,11 +294,14 @@ typedef struct sctp_association
   u32 rtt;
   u32 rto;
   pthread_spinlock_t lock;
-  sctp_thread_t *os_threads;
-  sctp_thread_t *mis_threads;
+  sctp_thread_t **os_threads;
+  sctp_thread_t **mis_threads;
   ringbuf_t *tx_ring;
   ringbuf_t *rx_ring;
   ringbuf_t *retry_ring;
+  ringbuf_t *prefilled_ring;
+  frame_data_t *base; /* will be replaced with ulp config */
+  sctp_ulp_config_t *ulp;
 } sctp_association_t;
 
 typedef i64 (*sctp_assoc) (sctp_association_t *, u0 *, u32);
@@ -301,9 +325,6 @@ u0 *build_sctp_cookie_echo_hdr_raw (u0 *packet, u16 *plen, u0 *cookie, u16 cooki
 u0 *build_sctp_cookie_param_raw (u0 *packet, u16 *plen, cookie_t *cookie);
 
 frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
-frame_data_t *build_prefilled_sctp_init_hdr (frame_data_t *frame);
-frame_data_t *build_prefilled_sctp_init_ack_hdr (frame_data_t *frame);
-frame_data_t *build_prefilled_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);

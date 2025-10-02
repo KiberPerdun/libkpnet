@@ -4,6 +4,7 @@
 
 #include "checks.h"
 #include "eth.h"
+#include "hwinfo.h"
 #include "if_packet.h"
 #include "netlink.h"
 #include "random.h"
@@ -97,6 +98,19 @@ create_server ()
   if (!eth)
     goto cleanup;
 
+  sctp_association_t *assoc;
+  if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
+    goto cleanup;
+
+  assoc->id = get_random_u16 ();
+  pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
+  assoc->tx_ring = rb_tx;
+  assoc->rx_ring = rb_rx;
+  assoc->retry_ring = NULL;
+  assoc->base = frame;
+  assoc->base->state = meta;
+  //assoc->ulp = ulp;
+
   sctp_init ();
 
   ringbuf_cell_t *cell;
@@ -104,7 +118,7 @@ create_server ()
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
 
-  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
   frame = build_sctp_init_ack_hdr (frame);
   push_ringbuf (rb_tx, frame->packet, frame->plen);
@@ -114,7 +128,7 @@ create_server ()
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
 
-  while (if_ip_sctp (cell->packet, cell->plen, meta) == 0);
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
   memcpy (frame->state, meta->add, meta->add_len);
   frame = build_sctp_cookie_ack_hdr (frame);

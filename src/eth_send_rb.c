@@ -4,7 +4,8 @@
 
 #include "if_packet.h"
 
-_Noreturn u0 *eth_send_rb (u0 *arg)
+_Noreturn u0 *
+eth_send_rb (u0 *arg)
 {
   rb_arg_t *a = arg;
   ringbuf_cell_t *cell;

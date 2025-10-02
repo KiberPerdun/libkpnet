@@ -30,12 +30,14 @@ sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen)
       return -1;
     }
 
+  pthread_spin_lock (&assoc->lock);
   assoc->ver_tag = cookie->ver_tag;
   assoc->init_tag = cookie->init_tag;
   assoc->a_rwnd = cookie->a_rwnd;
   assoc->os = cookie->os;
   assoc->mis = cookie->mis;
   assoc->tsn = cookie->tsn;
+  pthread_spin_unlock (&assoc->lock);
 
   return 0;
 }
