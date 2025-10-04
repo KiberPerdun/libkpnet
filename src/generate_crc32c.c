@@ -26,7 +26,7 @@ generate_crc32c (const u8 *data, u32 length)
     }
 
   for (; i < length; ++i)
-    crc = __builtin_ia32_crc32qi (crc, chunk);
+    crc = __builtin_ia32_crc32qi (crc, data[i]);
 
   return ~(u32) crc;
 }
@@ -39,13 +39,14 @@ generate_crc32c_on_crc32c (const u8 *data, u32 length, u64 crc)
 
   i = 0;
 
-  for (; i + 8 <= length; i += 8) {
+  for (; i + 8 <= length; i += 8)
+    {
       memcpy (&chunk, data + i, 8);
       crc = __builtin_ia32_crc32di (crc, chunk);
     }
 
   for (; i < length; ++i)
-    crc = __builtin_ia32_crc32qi (crc, chunk);
+    crc = __builtin_ia32_crc32qi (crc, data[i]);
 
   return crc;
 }

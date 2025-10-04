@@ -165,6 +165,12 @@ create_server ()
 
   while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
+  do
+    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
+      ;
+
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
+
   if (pthread_join (cons, NULL) != 0)
     return 0;
 

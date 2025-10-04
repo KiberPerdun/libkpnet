@@ -184,10 +184,9 @@ create_client ()
   if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
     return 0;
 
+  sctp_init ();
+
   BENCH_START ()
-  cell = pop_ringbuf (rb_prefill);
-  frame->prefill = cell->packet;
-  frame->plen = cell->plen;
   build_prefilled_mac_ip_sctp_init_hdr (assoc);
   BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
 

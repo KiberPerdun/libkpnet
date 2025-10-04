@@ -21,6 +21,7 @@ typedef enum SCTP_STATUS
   SCTP_COOKIE_RECEIVED,
   SCTP_COOKIE_ECHO_SENT,
   SCTP_COOKIE_ECHO_RECEIVED,
+  SCTP_ESTABLISHED,
 } SCTP_STATUS_T;
 
 typedef enum SCTP_HDR_TYPE
@@ -314,8 +315,8 @@ typedef struct sctp_association
   sctp_ulp_config_t *ulp;
 } sctp_association_t;
 
-typedef i64 (*sctp_assoc) (sctp_association_t *, u0 *, u32);
-extern u0 *sctp_methods[16];
+typedef i64 (*sctp_process) (sctp_association_t *, u0 *, u32);
+extern sctp_process *sctp_methods[16];
 
 u0  sctp_init ();
 u32 generate_crc32c (const u8 *buffer, u32 length);
@@ -342,6 +343,7 @@ frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
 i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
+i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 
 #define HMAC_MD5_KEY_LEN 16
 

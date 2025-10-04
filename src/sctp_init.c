@@ -4,7 +4,7 @@
 
 #include "if_packet.h"
 
-u0 *sctp_methods[16] = { 0 };
+sctp_process *sctp_methods[16] = { 0 };
 
 u0 sctp_init ()
 {
@@ -12,8 +12,8 @@ u0 sctp_init ()
     sctp_methods[i] = NULL;
 
   sctp_methods[SCTP_DATA]          = NULL; /* 0 */
-  sctp_methods[SCTP_INIT]          = sctp_process_sctp_init; /* 1 */
-  sctp_methods[SCTP_INIT_ACK]      = NULL; /* 2 */
+  //sctp_methods[SCTP_INIT]          = sctp_process_sctp_init; /* 1 */
+  //sctp_methods[SCTP_INIT_ACK]      = sctp_process_sctp_cookie_ack; /* 2 */
   sctp_methods[SCTP_SACK]          = NULL; /* 3 */
   sctp_methods[SCTP_HEARTBEAT]     = NULL; /* 4 */
   sctp_methods[SCTP_HEARTBEAT_ACK] = NULL; /* 5 */
@@ -21,6 +21,6 @@ u0 sctp_init ()
   sctp_methods[SCTP_SHUTDOWN]      = NULL; /* 7 */
   sctp_methods[SCTP_SHUTDOWN_ACK]  = NULL; /* 8 */
   sctp_methods[SCTP_ERROR]         = NULL; /* 9 */
-  sctp_methods[SCTP_COOKIE_ECHO]   = NULL; /* 10 */
-  sctp_methods[SCTP_COOKIE_ACK]    = NULL; /* 11 */
+  //sctp_methods[SCTP_COOKIE_ECHO]   = sctp_process_sctp_cookie_echo; /* 10 */
+  //sctp_methods[SCTP_COOKIE_ACK]    = sctp_process_sctp_cookie_ack; /* 11 */
 }

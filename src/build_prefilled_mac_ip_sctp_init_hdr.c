@@ -58,6 +58,8 @@ build_prefilled_mac_ip_sctp_init_hdr (sctp_association_t *assoc)
 
   cmn->check = ~(u32) generate_crc32c_on_crc32c ((const u8 *) cmn, sizeof (sctp_cmn_hdr_t ) + sizeof (hdr), 0xFFFFFFFF);
 
+  assoc->status = SCTP_INIT_SENT;
+
   packet = tmp_packet;
   push_ringbuf (assoc->tx_ring, packet, plen);
   push_ringbuf (assoc->prefilled_ring, cell->packet, cell->plen);
