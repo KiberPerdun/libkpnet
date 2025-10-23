@@ -60,4 +60,3 @@ build_prefilled_mac_ip_sctp_cookie_ack_hdr (sctp_association_t *assoc)
   push_ringbuf (assoc->prefilled_ring, cell->packet, cell->plen);
   return 0;
 }
-

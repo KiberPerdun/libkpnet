@@ -31,6 +31,8 @@ size_t siz;
 eth_t *
 eth_open (const char *device)
 {
+  i32 val = 1;
+
   if (!device)
     return NULL;
 
@@ -39,7 +41,7 @@ eth_open (const char *device)
   if (!eth)
     return eth;
 
-  if ((eth->fd = socket (AF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 1)
+  if ((eth->fd = socket (AF_PACKET, SOCK_RAW, htons (ETH_P_IP))) < 1)
     return eth_close (eth);
 
   _strlcpy (eth->ifr.ifr_name, device, sizeof (eth->ifr.ifr_name));
@@ -53,6 +55,30 @@ eth_open (const char *device)
   eth->sll.sll_hatype = 1;
   eth->sll.sll_halen = ETH_ALEN;
   eth->sll.sll_pkttype = PACKET_HOST; /* TODO: pkttype */
+
+  if (bind (eth->fd, (struct sockaddr *) &eth->sll, sizeof (eth->sll)) < 0)
+    {
+      perror ("bind");
+      return eth_close (eth);
+    }
+
+  if (setsockopt (eth->fd, SOL_PACKET, PACKET_IGNORE_OUTGOING, &val,
+                  sizeof (val))
+      < 0)
+      perror ("setsockopt PACKET_IGNORE_OUTGOING");
+
+  i32 flags = fcntl (eth->fd, F_GETFL, 0);
+  if (flags < 0)
+    {
+      perror ("fcntl F_GETFL");
+      return eth_close (eth);
+    }
+
+  if (fcntl (eth->fd, F_SETFL, flags | O_NONBLOCK) < 0)
+    {
+      perror ("fcntl F_SETFL O_NONBLOCK");
+      return eth_close (eth);
+    }
 
   return eth;
 }

@@ -27,6 +27,7 @@ sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen)
   assoc->a_rwnd = hdr->init_ack.a_rwnd;
   assoc->ver_tag = hdr->init_ack.init_tag;
   assoc->tsn = hdr->init_ack.init_tsn;
+  assoc->status = SCTP_INIT_ACK_RECEIVED;
   pthread_spin_unlock (&assoc->lock);
 
   /* only for sctp_cookie_echo */

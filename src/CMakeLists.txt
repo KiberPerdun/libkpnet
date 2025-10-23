@@ -100,6 +100,10 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         sctp_process_sctp_init_ack.c
         build_prefilled_mac_ip_sctp_cookie_ack_hdr.c
         sctp_process_sctp_cookie_ack.c
+        build_prefilled_mac_ip_sctp_data_hdr.c
+        prepare_sctp_threads.c
+        timeouts_init.c
+        add_timeouts.c
 )
 
 add_executable(src ${SOURCES})

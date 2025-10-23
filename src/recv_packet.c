@@ -30,16 +30,35 @@ recv_packet (u0 *a)
   for (;;)
     {
       data_size = recv (arg->eth->fd, buffer, 65536, MSG_DONTWAIT);
+
       if (data_size < 0)
         {
-          if (EAGAIN == errno || EWOULDBLOCK == errno)
+          if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+              usleep(1000);
               continue;
+            }
 
           perror ("recv");
           free (buffer);
+          exit (EXIT_FAILURE);
         }
 
-      push_ringbuf (arg->rb, buffer, data_size);
+      if (data_size == 0)
+        {
+          fprintf (stderr, "Connection closed\n");
+          free (buffer);
+          exit (EXIT_SUCCESS);
+        }
+
+      if (push_ringbuf (arg->rb, buffer, data_size) == -1)
+        {
+          free(buffer);
+          usleep(100);
+          buffer = malloc (65536);
+          continue;
+        }
+
       buffer = malloc (65536);
     }
 

@@ -12,5 +12,6 @@ i32 build_prefilled_mac_ip_sctp_init_hdr (sctp_association_t *assoc);
 i32 build_prefilled_mac_ip_sctp_init_ack_hdr (sctp_association_t *assoc);
 i32 build_prefilled_mac_ip_sctp_cookie_echo_hdr (sctp_association_t *assoc);
 i32 build_prefilled_mac_ip_sctp_cookie_ack_hdr (sctp_association_t *assoc);
+i32 build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id);
 
 #endif // LIBKPNET_PREFILLED_H

@@ -120,6 +120,7 @@ create_server ()
   assoc->retry_ring = NULL;
   assoc->ulp = ulp;
   assoc->base = frame;
+  assoc->status = SCTP_LISTEN;
   assoc->base->state = meta;
   //assoc->ulp = ulp;
 
@@ -153,11 +154,6 @@ create_server ()
     return 0;
 
   sctp_init ();
-  do
-    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
-      ;
-
-  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
 
   do
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)

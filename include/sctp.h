@@ -58,6 +58,13 @@ typedef enum SCTP_ERROR_KIND
   SCTP_ERROR_PROTOCOL_VIOLATION                           = 13,
 } SCTP_ERROR_KIND_T;
 
+#define SCTP_EBIT 0x01
+#define SCTP_BBIT 0x02
+#define SCTP_UBIT 0x04
+#define SCTP_IBIT 0x08
+
+#define SCTP_UNFRAGMENTED (SCTP_BBIT | SCTP_EBIT)
+
 typedef struct sctp_opt
 {
   u16 type;
@@ -286,6 +293,10 @@ typedef struct sctp_thread
   u16 *misses;
   u16 num_misses;
   u16 ssn;
+  u16 sin;
+  u32 proto;
+  i8 flags;
+  u32 buffer_remain;
   bool active;
 } sctp_thread_t;
 
@@ -339,6 +350,8 @@ frame_data_t *build_sctp_init_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_init_ack_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_echo_hdr (frame_data_t *frame);
 frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
+
+i64 prepare_sctp_threads (sctp_association_t *assoc);
 
 i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen);

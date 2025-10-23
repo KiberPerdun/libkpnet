@@ -149,6 +149,8 @@ create_client ()
   assoc->retry_ring = NULL;
   assoc->ulp = ulp;
   assoc->base = frame;
+  assoc->os = htons (16);
+  assoc->mis = htons (16);
   assoc->base->state = meta;
   /*
   pthread_spin_lock(&lock);
@@ -194,7 +196,27 @@ create_client ()
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
 
-  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == NULL);
+
+  do
+    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
+      ;
+
+  while (if_ip_sctp (cell->packet, cell->plen, assoc) == NULL);
+
+  char buffer[] = "АCUDA is currently only deployed on x86 and Arm, but not on RISC-V. We are sending a message to the outside world - we want to port CUDA to the RISC-V architecture as well.";
+  printf ("%d", sizeof (buffer));
+  puts (" ");
+  assoc->os_threads[0]->buffer = buffer;
+  assoc->os_threads[0]->pos_high = sizeof (buffer);
+  assoc->os_threads[0]->pos_low = 0;
+  assoc->os_threads[0]->pos_current = 0;
+  build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+  //build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+  //build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+  //build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+
+  for (;;);
 
   if (pthread_join (cons, NULL) != 0)
     return 0;
