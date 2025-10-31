@@ -56,7 +56,8 @@ build_prefilled_mac_ip_sctp_init_ack_hdr (sctp_association_t *assoc)
   hdr.cookie.dst_ip = ulp->src_ip;
   hdr.cookie.os = assoc->os;
   hdr.cookie.mis = assoc->mis;
-  hdr.cookie.tsn = get_random_u32 ();
+  hdr.cookie.tsn = assoc->tsn;
+  hdr.cookie.dst_tsn = assoc->dst_tsn;
   hdr.cookie.a_rwnd = assoc->a_rwnd;
   hdr.cookie.init_tag = get_random_u32 ();
   hdr.cookie.ver_tag = assoc->ver_tag;

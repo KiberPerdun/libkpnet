@@ -31,6 +31,40 @@ main (u0)
   up_if (get_ifid (CLIENT_INAME));
   up_if (get_ifid (SERVER_INAME));
 
+  /*
+  i32 a, b, k;
+
+  a = 69;
+  b = 6;
+  k = 29;
+  k -= 7;
+
+  asm volatile ("loop:;"
+                "subl $7, %[k];"
+
+                "movl %[a], %%eax;"
+                "movl %[b], %%ebx;"
+                "subl %%ebx, %%eax;"
+                "cdq;"
+                "xor %%edx, %%eax;"
+                "sub %%edx, %%eax;"
+                "movl %%eax, %[a];"
+
+                "cmpl $9, %[k];"
+                "jl nazi;"
+
+                "jmp loop;"
+
+                "nazi:;"
+                "leal (%[a], %[k]), %[b];"
+                : [a] "+r"(a), [b] "+r"(b), [k] "+r"(k)
+                :
+                : "eax", "ebx", "edx");
+
+  printf ("a = %d, b = %d, k = %d\n", a, b, k);
+  return 0;
+   */
+
   const u32 src_ip = inet_addr ("192.168.1.2");
   const u32 dst_ip = inet_addr ("192.168.1.3");
   bind_if (get_ifid (CLIENT_INAME), src_ip);

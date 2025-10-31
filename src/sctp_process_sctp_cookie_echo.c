@@ -38,6 +38,7 @@ sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen)
   assoc->os = cookie->os;
   assoc->mis = cookie->mis;
   assoc->tsn = cookie->tsn;
+  assoc->dst_tsn = cookie->dst_tsn;
   assoc->dst_ip = cookie->src_ip;
   assoc->dst_port = cookie->src_port;
   pthread_spin_unlock (&assoc->lock);

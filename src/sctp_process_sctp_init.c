@@ -28,6 +28,7 @@ sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen)
   ass.tx_ring = assoc->tx_ring;
   ass.prefilled_ring = assoc->prefilled_ring;
   ass.tsn = sctp->type.init.init_tsn;
+  ass.dst_tsn = sctp->type.init.init_tsn;
 
   build_prefilled_mac_ip_sctp_init_ack_hdr (&ass);
 

@@ -9,11 +9,15 @@ i32
 build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id)
 {
   ringbuf_cell_t *cell;
+  if (!assoc->os_threads[stream_id])
+    return -1;
+
   sctp_thread_t *thread = assoc->os_threads[stream_id];
-  u0 *packet, *tmp_packet;
+  u0 *packet;
   u32 chk, plen, pplen;
   sctp_cmn_hdr_t *cmn;
   ipv4_t *ip;
+  u8 pad;
 
   struct
   {
@@ -25,9 +29,7 @@ build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id)
   hdr.fld.flags = thread->flags;
 
   hdr.data.tsn = assoc->tsn;
-  pthread_spin_lock (&assoc->lock);
   assoc->tsn += htonl (1);
-  pthread_spin_unlock (&assoc->lock);
 
   hdr.data.so = htons (stream_id);
   hdr.data.sn = thread->ssn;
@@ -52,8 +54,19 @@ build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id)
   memcpy (packet, &hdr, sizeof (hdr));
   memcpy (packet + sizeof (hdr), thread->buffer + thread->pos_current, MIN (pplen, thread->pos_high - thread->pos_current));
   plen += sizeof (hdr) + MIN (pplen, thread->pos_high - thread->pos_current);
-  thread->pos_current += MIN (pplen, thread->pos_high - thread->pos_current);
 
+  if (plen < 1500)
+    {
+      pad = -(sizeof (hdr) + MIN (pplen, thread->pos_high - thread->pos_current)) & 3;
+      memset (packet + sizeof (hdr)
+                  + MIN (pplen, thread->pos_high - thread->pos_current),
+              0, pad);
+      plen += pad;
+    }
+  else
+    pad = 0;
+
+  thread->pos_current += MIN (pplen, thread->pos_high - thread->pos_current);
   cmn = packet - sizeof (sctp_cmn_hdr_t);
   ip = (u0 *) cmn - sizeof (ipv4_t);
   chk = ip->check;
@@ -63,7 +76,9 @@ build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id)
     chk = (chk & 0xFFFF) + (chk >> 16);
   ip->check = chk;
 
-  cmn->check = ~(u32) generate_crc32c_on_crc32c ((const u8 *) cmn, sizeof (sctp_cmn_hdr_t ) + ntohs (hdr.fld.len), 0xFFFFFFFF);
+  cmn->tag = assoc->ver_tag;
+  cmn->check = 0;
+  cmn->check = ~(u32) generate_crc32c_on_crc32c ((const u8 *) cmn, sizeof (sctp_cmn_hdr_t ) + ntohs (hdr.fld.len) + pad, 0xFFFFFFFF);
 
   printf ("%d", plen);
   puts (" ");

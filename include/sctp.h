@@ -208,6 +208,7 @@ typedef struct cookie
   u16 os;
   u16 mis;
   u32 tsn;
+  u32 dst_tsn;
   u32 src_ip;
   u32 dst_ip;
   u32 src_port;
@@ -312,7 +313,8 @@ typedef struct sctp_association
   u32 dst_ip;
   u16 os;
   u16 mis;
-  u32 tsn;
+  _Atomic u32 tsn;
+  _Atomic u32 dst_tsn;
   u32 rtt;
   u32 rto;
   pthread_spinlock_t lock;
@@ -357,6 +359,7 @@ i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
+i64 sctp_process_sctp_data (sctp_association_t *assoc, u0 *packet, u32 plen);
 
 #define HMAC_MD5_KEY_LEN 16
 
