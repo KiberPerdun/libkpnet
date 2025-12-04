@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -march=native -O2 -flto -fno-plt -fsanitize=address")
 
 include_directories(
         ${PROJECT_SOURCE_DIR}

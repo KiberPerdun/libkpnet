@@ -235,7 +235,6 @@ create_client ()
   for (; thread->pos_current != thread->pos_high;)
     build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
 
-
   if (pthread_join (cons, NULL) != 0)
     return 0;
 
