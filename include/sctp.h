@@ -324,6 +324,8 @@ typedef struct sctp_association
   ringbuf_t *rx_ring;
   ringbuf_t *retry_ring;
   ringbuf_t *prefilled_ring;
+  ringbuf_t *events_allocator;
+  ringbuf_t *bundling;
   frame_data_t *base; /* will be replaced with ulp config */
   sctp_ulp_config_t *ulp;
 } sctp_association_t;

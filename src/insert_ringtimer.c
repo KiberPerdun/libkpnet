@@ -44,11 +44,6 @@ insert_ringtimer (timer_callback callback, u32 time, ringtimer_t *ring)
       cur->retries = slot / ring->max;
       first->prev = cur;
     }
-  /*
-  ring->timers[slot % ring->max] = cell->packet;
-  ring->timers[slot % ring->max]->callback = callback;
-  ring->timers[slot % ring->max]->retries = slot / ring->max;
-  */
 
   return ring;
 }

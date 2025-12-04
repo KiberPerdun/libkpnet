@@ -143,6 +143,9 @@ create_client ()
   if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
+  ringbuf_t *allocator = create_allocator (64, 256);
+  assoc->events_allocator = allocator;
+  assoc->bundling = create_ringbuf (256);
   assoc->id = get_random_u16 ();
   pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
   assoc->tx_ring = rb_tx;
@@ -153,11 +156,6 @@ create_client ()
   assoc->os = htons (16);
   assoc->mis = htons (16);
   assoc->base->state = meta;
-  /*
-  pthread_spin_lock(&lock);
-  pthread_spin_unlock(&lock);
-  pthread_spin_destroy(&lock);
-   */
   ringbuf_cell_t *cell;
 
   rb_prefill = create_ringbuf (rb_tx->size);
@@ -227,13 +225,56 @@ create_client ()
                   "Хозяин впускает. После чего не может уснуть всю ночь: 6 метров, без окон, без мебели, стены не покрашены, холодно, сыро, крысы, три студента, три ковбоя, три мафиози, блондинка… Что же завтра будет?!\n"
                   "Наутро из комнаты выходят три студента, довольные жизнью, покупают три Кока-Колы и уезжают. Затем выходят три ковбоя, довольные жизнью, покупают три Кока-Колы и уезжают. После выходят три мафиози, довольные жизнью, покупают три Кока-Колы и уезжают. Последней выходит блондинка, еще краше, чем ночью, покупает виски, выпивает и уезжает.\n"
                   "Мораль: девять из десяти человек в Америке пьют Кока-Колу.";
+  char buffer1[] = "Пять людоедов устроились на работу. Генеральный директор показал им\n"
+                   "кабинет и говорит:\n"
+                   "— Ребята работайте, только сотрудников не трогайте, к вашим услугам\n"
+                   "наша столовая, все за счет фирмы.\n"
+                   "Проходит два месяца. Генеральный приходит, говорит:\n"
+                   "— Ребята, молодцы! Я вами очень доволен. Вот только вы нашу уборщицу\n"
+                   "не видели? В офисе грязно, а ее второй день нет.\n"
+                   "Людоеды божатся, что ни словом, ни духом. Директор уходит. Самый главный\n"
+                   "людоед говорит:\n"
+                   "— Ну, кто сожрал уборщицу?\n"
+                   "Один сознается.\n"
+                   "— Слушай, два месяца мы ели менеджеров, пиарщиков, рекламщиков, маркетологов,\n"
+                   "бухгалтеров — никто ничего не замечал. Зачем ты сожрал уборщицу?";
+  char buffer2[] = "На советский завод приезжает американская делегация. \n"
+                   "Идут по цеху и видят: стоят возле станка мастер и рабочий. \n"
+                   "Переводчица - американская, попросили перевести. \n"
+                   "Та, слегка смущаясь, переводит: \n"
+                   "— Мастер говорит рабочему: \n"
+                   "«Кто-то вступил в интимные отношения с твоей матерью, ты, гулящая женщина, даже эту изнасилованную шестеренку, гулящая женщина, не можешь, гулящая женщина, правильно сделать, гулящая женщина. Директор, гулящая женщина, даст тебе хороший женский половой орган, гулящая женщина, и вступит с тобой в интимные отношения посредством заднепроходного отверстия, гулящая женщина, если из-за тебя, пассивного гомосексуалиста, опять сорвется на половой член план, гулящая женщина, который должен выполнить завод!\" \n"
+                   "В ответ на это рабочий отвечает, что рабочий уже вступил в интимные отношения с речевыми органами директора, что рабочий вступил в интимные отношения со всеми на заводе шестеренками и, что самое невероятное: он вращал на половом члене завод со всеми его планами!»\n"
+                   "\n";
   thread = assoc->os_threads[0];
   thread->buffer = buffer;
   thread->pos_high = sizeof (buffer);
   thread->pos_low = 0;
   thread->pos_current = 0;
+
   for (; thread->pos_current != thread->pos_high;)
     build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+
+  thread = assoc->os_threads[1];
+  thread->buffer = buffer1;
+  thread->pos_high = sizeof (buffer1);
+  thread->pos_low = 0;
+  thread->pos_current = 0;
+
+  for (; thread->pos_current != thread->pos_high;)
+    build_prefilled_mac_ip_sctp_data_hdr (assoc, 1);
+
+  thread = assoc->os_threads[2];
+  thread->buffer = buffer2;
+  thread->pos_high = sizeof (buffer2);
+  thread->pos_low = 0;
+  thread->pos_current = 0;
+
+  for (; thread->pos_current != thread->pos_high;)
+    build_prefilled_mac_ip_sctp_data_hdr (assoc, 2);
+
+  cell = pop_ringbuf (assoc->bundling);
+  push_ringbuf (assoc->tx_ring, cell->packet, cell->plen);
 
   if (pthread_join (cons, NULL) != 0)
     return 0;

@@ -113,6 +113,9 @@ create_server ()
   if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
+  ringbuf_t *allocator = create_allocator (64, 256);
+  assoc->events_allocator = allocator;
+  assoc->bundling = create_ringbuf (256);
   assoc->id = get_random_u16 ();
   pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
   assoc->tx_ring = rb_tx;

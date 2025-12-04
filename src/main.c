@@ -30,8 +30,9 @@ main (u0)
 
 #include "netlink.h"
 
-  ringbuf_t *allocator = create_allocator (64, 256);
-  ringtimer_t *timer = create_ringtimer (8, allocator);
+  /*
+  ringbuf_t *events_allocator = create_allocator (64, 256);
+  ringtimer_t *timer = create_ringtimer (8, events_allocator);
   insert_ringtimer (&a, 69, timer);
   insert_ringtimer (&a, 69, timer);
   insert_ringtimer (&a, 69, timer);
@@ -46,11 +47,11 @@ main (u0)
       tick_ringtimer (timer);
     }
 
-  free_ringbuf (allocator);
+  free_ringbuf (events_allocator);
   free (timer->timers);
   free (timer);
 
-  return 0;
+   */
   create_veth_pair (CLIENT_INAME, SERVER_INAME);
   /* delete_if (get_ifid ("libkpnet_c")); */
   /* delete_if (get_ifid ("libkpnet_s")); */
