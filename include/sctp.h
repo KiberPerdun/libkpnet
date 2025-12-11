@@ -301,6 +301,24 @@ typedef struct sctp_thread
   bool active;
 } sctp_thread_t;
 
+/* network order */
+typedef struct sctp_chunk_slot
+{
+  u8 in_use;
+  u8 acked;
+
+  u32 tsn;
+  u32 stream_id;
+
+  u16 retry_count;
+
+  u0 *buffer;
+  u32 len;
+} sctp_chunk_slot_t;
+
+#define RTX_BUFFER_SIZE 16384
+#define RTX_MASK (RTX_BUFFER_SIZE - 1)
+
 typedef struct sctp_association
 {
   u16 id;
@@ -317,6 +335,7 @@ typedef struct sctp_association
   _Atomic u32 dst_tsn;
   u32 rtt;
   u32 rto;
+  u32 mtu;
   pthread_spinlock_t lock;
   sctp_thread_t **os_threads;
   sctp_thread_t **mis_threads;
@@ -328,6 +347,11 @@ typedef struct sctp_association
   ringbuf_t *bundling;
   frame_data_t *base; /* will be replaced with ulp config */
   sctp_ulp_config_t *ulp;
+
+  u0 *current_packet;
+  u0 *cursor;
+  u32 remain_plen;
+  sctp_chunk_slot_t rtx[RTX_BUFFER_SIZE];
 } sctp_association_t;
 
 typedef i64 (*sctp_process) (sctp_association_t *, u0 *, u32);
@@ -357,12 +381,15 @@ frame_data_t *build_sctp_cookie_ack_hdr (frame_data_t *frame);
 
 i64 prepare_sctp_threads (sctp_association_t *assoc);
 
+u64 sctp_build_data_hdr (sctp_association_t *assoc, u16 stream_id);
+
 i64 sctp_process_sctp_init (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_data (sctp_association_t *assoc, u0 *packet, u32 plen);
 
+i64 sctp_check_checksums (u0 *packet, u64 plen);
 #define HMAC_MD5_KEY_LEN 16
 
 u0 hmac_md5 (u8 *text, i32 text_len, u8 *key, i32 key_len, caddr_t digest);

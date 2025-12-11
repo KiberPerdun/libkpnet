@@ -72,16 +72,20 @@ create_client ()
 
   eth = eth_open (CLIENT_INAME);
 
+  ringbuf_t *allocator_2048 = create_allocator (2048, 256);
+
   rb_arg_t arg_tx;
+  arg_tx.allocator = allocator_2048;
   arg_tx.eth = eth;
   rb_tx = create_ringbuf (64);
   arg_tx.rb = rb_tx;
 
   rb_arg_t arg_rx;
+  arg_rx.allocator = allocator_2048;
   arg_rx.eth = eth;
   rb_rx = create_ringbuf (1024);
   arg_rx.rb = rb_rx;
-  if (pthread_create (&prod, NULL, recv_packet, &arg_rx) != 0)
+  if (pthread_create (&prod, NULL, recv_sctp_packet, &arg_rx) != 0)
     return 0;
 
   dst_port = 80;
@@ -143,6 +147,7 @@ create_client ()
   if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
 
+  memset (&assoc->rtt, 0, sizeof (sctp_chunk_slot_t) * RTX_BUFFER_SIZE);
   ringbuf_t *allocator = create_allocator (64, 256);
   assoc->events_allocator = allocator;
   assoc->bundling = create_ringbuf (256);
@@ -156,6 +161,7 @@ create_client ()
   assoc->os = htons (16);
   assoc->mis = htons (16);
   assoc->base->state = meta;
+  assoc->mtu = 1500 - sizeof (mac_t) - sizeof (ipv4_t) - sizeof (sctp_cmn_hdr_t);
   ringbuf_cell_t *cell;
 
   rb_prefill = create_ringbuf (rb_tx->size);
@@ -182,7 +188,7 @@ create_client ()
 
   arg_tx.rb_prefill = rb_prefill;
 
-  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
+  if (pthread_create (&cons, NULL, eth_send_sctp, &arg_tx) != 0)
     return 0;
 
   sctp_init ();
@@ -246,14 +252,31 @@ create_client ()
                    "«Кто-то вступил в интимные отношения с твоей матерью, ты, гулящая женщина, даже эту изнасилованную шестеренку, гулящая женщина, не можешь, гулящая женщина, правильно сделать, гулящая женщина. Директор, гулящая женщина, даст тебе хороший женский половой орган, гулящая женщина, и вступит с тобой в интимные отношения посредством заднепроходного отверстия, гулящая женщина, если из-за тебя, пассивного гомосексуалиста, опять сорвется на половой член план, гулящая женщина, который должен выполнить завод!\" \n"
                    "В ответ на это рабочий отвечает, что рабочий уже вступил в интимные отношения с речевыми органами директора, что рабочий вступил в интимные отношения со всеми на заводе шестеренками и, что самое невероятное: он вращал на половом члене завод со всеми его планами!»\n"
                    "\n";
+
   thread = assoc->os_threads[0];
   thread->buffer = buffer;
   thread->pos_high = sizeof (buffer);
   thread->pos_low = 0;
   thread->pos_current = 0;
 
+  cell = pop_ringbuf (assoc->prefilled_ring);
+  assoc->current_packet = cell->packet;
+  assoc->remain_plen = assoc->mtu;
+  assoc->cursor = cell->packet + sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t);
+  for (;;)
+    {
+      sctp_build_data_hdr (assoc, 0);
+      sctp_build_data_hdr (assoc, 0);
+      sctp_build_data_hdr (assoc, 0);
+      sctp_build_data_hdr (assoc, 0);
+      push_ringbuf (assoc->tx_ring, assoc->current_packet, assoc->mtu - assoc->remain_plen + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)));
+      break;
+    }
+
+  /*
   for (; thread->pos_current != thread->pos_high;)
     build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
+    */
 
   thread = assoc->os_threads[1];
   thread->buffer = buffer1;
@@ -261,8 +284,10 @@ create_client ()
   thread->pos_low = 0;
   thread->pos_current = 0;
 
+  /*
   for (; thread->pos_current != thread->pos_high;)
     build_prefilled_mac_ip_sctp_data_hdr (assoc, 1);
+*/
 
   thread = assoc->os_threads[2];
   thread->buffer = buffer2;
@@ -270,11 +295,13 @@ create_client ()
   thread->pos_low = 0;
   thread->pos_current = 0;
 
+  /*
   for (; thread->pos_current != thread->pos_high;)
     build_prefilled_mac_ip_sctp_data_hdr (assoc, 2);
 
   cell = pop_ringbuf (assoc->bundling);
   push_ringbuf (assoc->tx_ring, cell->packet, cell->plen);
+   */
 
   if (pthread_join (cons, NULL) != 0)
     return 0;

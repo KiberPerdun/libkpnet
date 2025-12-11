@@ -50,17 +50,21 @@ create_server ()
   frame->plen = 0;
   frame->proto = PROTO_STACK_IP_TCP;
 
+  ringbuf_t *allocator_2048 = create_allocator (2048, 256);
+
   eth = eth_open (SERVER_INAME);
   rb_arg_t arg_tx;
+  arg_tx.allocator = allocator_2048;
   arg_tx.eth = eth;
   rb_tx = create_ringbuf (1024);
   arg_tx.rb = rb_tx;
 
   rb_arg_t arg_rx;
+  arg_rx.allocator = allocator_2048;
   arg_rx.eth = eth;
   rb_rx = create_ringbuf (1024);
   arg_rx.rb = rb_rx;
-  if (pthread_create (&prod, NULL, recv_packet, &arg_rx) != 0)
+  if (pthread_create (&prod, NULL, recv_sctp_packet, &arg_rx) != 0)
     return 0;
 
   /*
@@ -153,7 +157,7 @@ create_server ()
 
   arg_tx.rb_prefill = rb_prefill;
 
-  if (pthread_create (&cons, NULL, eth_send_rb, &arg_tx) != 0)
+  if (pthread_create (&cons, NULL, eth_send_sctp, &arg_tx) != 0)
     return 0;
 
   sctp_init ();

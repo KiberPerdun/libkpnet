@@ -42,10 +42,11 @@ typedef struct
 {
   ringbuf_t *rb;
   ringbuf_t *rb_prefill;
+  ringbuf_t *allocator;
   eth_t *eth;
 } rb_arg_t;
 
-_Noreturn u0 *eth_send_rb (u0 *arg);
+_Noreturn u0 *eth_send_sctp (u0 *arg);
 
 eth_t *eth_open (const char *device);
 eth_t *eth_close (eth_t *eth);

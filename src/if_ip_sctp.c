@@ -12,34 +12,10 @@ if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc)
       || NULL == assoc->base->state)
     return NULL;
 
-  if (size < sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)
-                 + sizeof (sctp_fld_hdr_t))
-    return NULL;
-
   ipv4_t *ip = packet + sizeof (mac_t);
   sctp_t *sctp = packet + sizeof (mac_t) + sizeof (ipv4_t);
   if (ip->dest_addr != assoc->ulp->src_ip)
     return NULL;
-
-  u16 check_check_ip = ip->check;
-  ip->check = 0;
-  if (check_check_ip != (u16) ~(u16)ip_checksum ((u16 *)ip, sizeof (ipv4_t)))
-    return NULL;
-
-  if (ntohs (ip->len)
-      < sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (sctp_fld_hdr_t))
-    return NULL;
-
-  u32 check_check_sctp = sctp->cmn.check;
-  sctp->cmn.check = 0;
-
-  ~(u32) generate_crc32c_on_crc32c ((const u8 *) sctp, sizeof (sctp_cmn_hdr_t ) + ntohs (sctp->fld.len), 0xFFFFFFFF);
-
-
-  if (check_check_sctp
-      !=       ~(u32) generate_crc32c_on_crc32c ((const u8 *) sctp, sizeof (sctp_cmn_hdr_t ) + ntohs (sctp->fld.len), 0xFFFFFFFF))
-    return NULL;
-
 
   if (assoc->ulp->src_port != ntohs (sctp->cmn.dstp))
     return NULL;

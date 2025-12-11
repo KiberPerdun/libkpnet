@@ -19,48 +19,53 @@
 #include <unistd.h>
 
 _Noreturn u0 *
-recv_packet (u0 *a)
+recv_sctp_packet (u0 *a)
 {
+  ringbuf_cell_t *cell;
   rb_arg_t *arg = a;
   i64 data_size;
   u0 *buffer;
 
-  buffer = malloc (65536);
+  do
+    cell = pop_ringbuf (arg->allocator);
+
+  while (!cell);
+  buffer = cell->packet;
 
   for (;;)
     {
-      data_size = recv (arg->eth->fd, buffer, 65536, MSG_DONTWAIT);
+      data_size = recv (arg->eth->fd, buffer, 2048, MSG_DONTWAIT);
 
       if (data_size < 0)
         {
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-              usleep(1000);
+              sched_yield ();
               continue;
             }
 
           perror ("recv");
-          free (buffer);
+          push_ringbuf (arg->allocator, buffer, 2048);
           exit (EXIT_FAILURE);
         }
 
       if (data_size == 0)
         {
           fprintf (stderr, "Connection closed\n");
-          free (buffer);
+          push_ringbuf (arg->allocator, buffer, 2048);
           exit (EXIT_SUCCESS);
         }
 
-      if (push_ringbuf (arg->rb, buffer, data_size) == -1)
-        {
-          free(buffer);
-          usleep(100);
-          buffer = malloc (65536);
-          continue;
-        }
+      if (sctp_check_checksums (buffer, data_size) != 0)
+        continue;
 
-      buffer = malloc (65536);
+      for (;push_ringbuf (arg->rb, buffer, data_size) == -1;)
+        sched_yield ();
+
+      do
+        cell = pop_ringbuf (arg->allocator);
+
+      while (!cell);
+      buffer = cell->packet;
     }
-
-  free (buffer);
 }
