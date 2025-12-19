@@ -5,15 +5,16 @@
 #ifndef LIBKPNET_SCTP_H
 #define LIBKPNET_SCTP_H
 
+#include "if_packet.h"
 #include "malloc.h"
+#include "stdbool.h"
 #include "types.h"
 #include <netinet/in.h>
-#include "stdbool.h"
-#include "if_packet.h"
 
 typedef enum SCTP_STATUS
 {
   SCTP_LISTEN,
+  SCTP_COOKIE_WAIT,
   SCTP_INIT_SENT,
   SCTP_INIT_RECEIVED,
   SCTP_INIT_ACK_SENT,
@@ -58,10 +59,31 @@ typedef enum SCTP_ERROR_KIND
   SCTP_ERROR_PROTOCOL_VIOLATION                           = 13,
 } SCTP_ERROR_KIND_T;
 
+typedef enum SCTP_SIGNALS
+{
+  SCTP_T1_INIT_EXPIRE = 1,
+} SCTP_SIGNALS_T;
+
 #define SCTP_EBIT 0x01
 #define SCTP_BBIT 0x02
 #define SCTP_UBIT 0x04
 #define SCTP_IBIT 0x08
+
+#define SCTP_RTO_INITIAL 1000
+#define SCTP_RTO_MIN 1000
+#define SCTP_RTO_MAX 60000
+#define SCTP_MAX_BURST 4
+#define SCTP_RTO_ALPHA (1/8)
+#define SCTP_RTO_BETA (1/4)
+#define SCTP_COOKIE_LIFE 60000
+#define SCTP_ASSOC_MAX_RETRANS 10
+#define SCTP_PATH_MAX_RATRANS 5
+#define SCTP_MAX_INIT_REITRANSMITS 8
+#define SCTP_HB_INTERVAL 30000
+#define SCTP_HB_MAX_BURST 1
+#define SCTP_SACK_DELAY 200
+
+#define SCTP_TIMER_STEP 100
 
 #define SCTP_UNFRAGMENTED (SCTP_BBIT | SCTP_EBIT)
 
@@ -312,12 +334,31 @@ typedef struct sctp_chunk_slot
 
   u16 retry_count;
 
+  u64 sent_at;
+
   u0 *buffer;
   u32 len;
 } sctp_chunk_slot_t;
 
 #define RTX_BUFFER_SIZE 16384
 #define RTX_MASK (RTX_BUFFER_SIZE - 1)
+
+typedef enum sctp_events
+{
+  SCTP_EVENT_RETRANSMISSION = 0,
+  SCTP_EVENT_SACK,
+} sctp_events_t;
+
+typedef struct sctp_event
+{
+  sctp_events_t event;
+} sctp_event_t __attribute__ ((aligned (8)));
+
+typedef struct sctp_event_retreansmission
+{
+  sctp_events_t event;
+  u32 tsn;
+} sctp_event_retreansmission_t __attribute__ ((aligned (64)));
 
 typedef struct sctp_association
 {
@@ -331,10 +372,14 @@ typedef struct sctp_association
   u32 dst_ip;
   u16 os;
   u16 mis;
-  _Atomic u32 tsn;
-  _Atomic u32 dst_tsn;
-  u32 rtt;
+  u32 tsn;
+  u32 dst_tsn;
+
+  u32 srtt;
+  u32 rttvar;
   u32 rto;
+  u32 rtt;
+
   u32 mtu;
   pthread_spinlock_t lock;
   sctp_thread_t **os_threads;
@@ -347,6 +392,9 @@ typedef struct sctp_association
   ringbuf_t *bundling;
   frame_data_t *base; /* will be replaced with ulp config */
   sctp_ulp_config_t *ulp;
+
+  ringtimer_t *timer;
+  ringbuf_t *events;
 
   u0 *current_packet;
   u0 *cursor;
@@ -388,6 +436,8 @@ i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen)
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_data (sctp_association_t *assoc, u0 *packet, u32 plen);
+
+u64 update_time (u0);
 
 i64 sctp_check_checksums (u0 *packet, u64 plen);
 #define HMAC_MD5_KEY_LEN 16

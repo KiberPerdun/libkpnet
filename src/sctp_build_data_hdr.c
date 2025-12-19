@@ -85,7 +85,7 @@ sctp_build_data_hdr (sctp_association_t *assoc, u16 stream_id)
   slot->stream_id = stream_id;
   slot->acked = 0;
   slot->in_use = 1;
-  slot->retry_count = 2;
+  slot->retry_count = 0;
 
   cmn->tag = assoc->ver_tag;
 

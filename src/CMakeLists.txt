@@ -110,6 +110,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         free_ringbuf.c
         sctp_check_checksums.c
         sctp_build_data_hdr.c
+        update_time.c
 )
 
 add_executable(src ${SOURCES})

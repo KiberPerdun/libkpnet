@@ -59,7 +59,7 @@ recv_sctp_packet (u0 *a)
       if (sctp_check_checksums (buffer, data_size) != 0)
         continue;
 
-      for (;push_ringbuf (arg->rb, buffer, data_size) == -1;)
+      for (; push_ringbuf (arg->rb, buffer, data_size) == -1;)
         sched_yield ();
 
       do

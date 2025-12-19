@@ -6,7 +6,7 @@
 #include <malloc.h>
 
 ringtimer_t *
-insert_ringtimer (timer_callback callback, u32 time, ringtimer_t *ring)
+insert_ringtimer (u64 signal, u64 time, ringtimer_t *ring)
 {
   ringtimer_callback_t *first, *last, *cur;
   ringbuf_cell_t *cell;
@@ -29,7 +29,7 @@ insert_ringtimer (timer_callback callback, u32 time, ringtimer_t *ring)
       first = ring->timers[slot % ring->max];
       first->prev = first;
       first->next = first;
-      first->callback = callback;
+      first->signal = signal;
       first->retries = slot / ring->max;
     }
   else
@@ -40,7 +40,7 @@ insert_ringtimer (timer_callback callback, u32 time, ringtimer_t *ring)
       cur = last->next;
       cur->next = first;
       cur->prev = last;
-      cur->callback = callback;
+      cur->signal = signal;
       cur->retries = slot / ring->max;
       first->prev = cur;
     }

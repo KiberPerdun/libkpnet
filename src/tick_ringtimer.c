@@ -5,10 +5,12 @@
 #include "ring_buffer.h"
 #include <malloc.h>
 
-ringtimer_t *
+timer_tick_result_t
 tick_ringtimer (ringtimer_t *ring)
 {
   u32 current = ring->current;
+  timer_tick_result_t res;
+  res.count = 0;
   ringtimer_callback_t *head = ring->timers[current];
 
   if (head)
@@ -18,11 +20,11 @@ tick_ringtimer (ringtimer_t *ring)
         {
           ringtimer_callback_t *next = t->next;
 
-          if (t->callback)
+          if (t->signal)
             {
               if (t->retries == 0)
                 {
-                  t->callback ();
+                  res.signals[res.count++] = t->signal;
 
                   if (t->next == t)
                     ring->timers[current] = NULL;
@@ -53,5 +55,5 @@ tick_ringtimer (ringtimer_t *ring)
     }
 
   ring->current = (ring->current + 1) % ring->max;
-  return ring;
+  return res;
 }

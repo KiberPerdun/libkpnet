@@ -2,6 +2,7 @@
 // Created by KiberPerdun on 11.12.2024.
 //
 
+#include "arp.h"
 #include "checks.h"
 #include "eth.h"
 #include "hwinfo.h"
@@ -11,6 +12,7 @@
 #include "prefilled.h"
 #include "random.h"
 #include "ring_buffer.h"
+#include "sctp.h"
 #include "tcp.h"
 #include "types.h"
 
@@ -19,6 +21,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/param.h>
 #include <thread_db.h>
 #include <threads.h>
 #include <time.h>
@@ -49,6 +52,9 @@ create_client ()
   frame_data_t *frame;
   thread_t cons, prod;
   sctp_thread_t *thread;
+  static u64 g_global_time;
+  static u64 g_current_time;
+  g_global_time = update_time ();
 
   if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
@@ -101,17 +107,17 @@ create_client ()
   meta->dst_ip = dst_ip;
   meta->src_port = src_port;
   meta->dst_port = dst_port;
-  meta->src_arwnd = ~0;
+  meta->src_arwnd = 65535;
   meta->src_os = 32;
   meta->src_mis = 32;
 
-  if (get_ifmac (SERVER_INAME, meta->gateway))
+  if (get_ifmac (CLIENT_INAME, meta->gateway))
     {
       fputs ("Failed to get gateway interface mac\n", stderr);
       goto cleanup;
     }
 
-  if (get_ifmac (CLIENT_INAME, meta->dev))
+  if (get_ifmac (SERVER_INAME, meta->dev))
     {
       fputs ("Failed to get dev interface mac\n", stderr);
       goto cleanup;
@@ -131,7 +137,7 @@ create_client ()
   meta->dst_ip = dst_ip;
   meta->src_port = src_port;
   meta->dst_port = dst_port;
-  meta->src_arwnd = ~0;
+  meta->src_arwnd = 65535;
   meta->src_os = 32;
   meta->src_mis = 32;
 
@@ -139,7 +145,7 @@ create_client ()
   ulp->dst_ip = dst_ip;
   ulp->src_port = src_port;
   ulp->dst_port = dst_port;
-  ulp->src_arwnd = ~0;
+  ulp->src_arwnd = 65535;
   ulp->src_os = 32;
   ulp->src_mis = 32;
 
@@ -192,6 +198,56 @@ create_client ()
     return 0;
 
   sctp_init ();
+  /*
+   *
+   */
+
+  assoc->status = SCTP_COOKIE_WAIT;
+  ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
+  assoc->timer = create_ringtimer (5 * 60, events_allocator);
+  g_global_time = update_time ();
+  u64 handshake_retrans = 0;
+  u64 t1_timer = SCTP_RTO_MIN / SCTP_TIMER_STEP;
+  build_prefilled_mac_ip_sctp_init_hdr (assoc);
+  insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer, assoc->timer);
+  timer_tick_result_t timer_results;
+
+  for (;;)
+    {
+      if (handshake_retrans > SCTP_ASSOC_MAX_RETRANS)
+        {
+          puts ("INIT ERROR");
+          break;
+        }
+      g_current_time = update_time ();
+      for (; (g_current_time - g_global_time) >= SCTP_TIMER_STEP;)
+        {
+          puts ("tick timer");
+          timer_results = tick_ringtimer (assoc->timer);
+          for (; timer_results.count > 0;)
+            {
+              puts ("count");
+              switch (timer_results.signals[--timer_results.count])
+                {
+                case (SCTP_T1_INIT_EXPIRE):
+                  {
+                    puts ("T1-INIT EXPIRE");
+                    t1_timer
+                        = MIN (t1_timer * 2, SCTP_RTO_MAX / SCTP_TIMER_STEP);
+                    insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer,
+                                      assoc->timer);
+                    build_prefilled_mac_ip_sctp_init_hdr (assoc);
+                    ++handshake_retrans;
+                    break;
+                  }
+                default:
+                  break;
+                }
+            }
+          g_global_time += SCTP_TIMER_STEP;
+        }
+      usleep (30000);
+    }
 
   BENCH_START ()
   build_prefilled_mac_ip_sctp_init_hdr (assoc);
@@ -259,6 +315,21 @@ create_client ()
   thread->pos_low = 0;
   thread->pos_current = 0;
 
+  thread = assoc->os_threads[1];
+  thread->buffer = buffer1;
+  thread->pos_high = sizeof (buffer1);
+  thread->pos_low = 0;
+  thread->pos_current = 0;
+
+  thread = assoc->os_threads[2];
+  thread->buffer = buffer2;
+  thread->pos_high = sizeof (buffer2);
+  thread->pos_low = 0;
+  thread->pos_current = 0;
+
+  // ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
+  assoc->events = events_allocator;
+
   cell = pop_ringbuf (assoc->prefilled_ring);
   assoc->current_packet = cell->packet;
   assoc->remain_plen = assoc->mtu;
@@ -269,39 +340,13 @@ create_client ()
       sctp_build_data_hdr (assoc, 0);
       sctp_build_data_hdr (assoc, 0);
       sctp_build_data_hdr (assoc, 0);
+      sctp_build_data_hdr (assoc, 1);
+      sctp_build_data_hdr (assoc, 2);
+      sctp_build_data_hdr (assoc, 2);
+      sctp_build_data_hdr (assoc, 2);
       push_ringbuf (assoc->tx_ring, assoc->current_packet, assoc->mtu - assoc->remain_plen + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)));
       break;
     }
-
-  /*
-  for (; thread->pos_current != thread->pos_high;)
-    build_prefilled_mac_ip_sctp_data_hdr (assoc, 0);
-    */
-
-  thread = assoc->os_threads[1];
-  thread->buffer = buffer1;
-  thread->pos_high = sizeof (buffer1);
-  thread->pos_low = 0;
-  thread->pos_current = 0;
-
-  /*
-  for (; thread->pos_current != thread->pos_high;)
-    build_prefilled_mac_ip_sctp_data_hdr (assoc, 1);
-*/
-
-  thread = assoc->os_threads[2];
-  thread->buffer = buffer2;
-  thread->pos_high = sizeof (buffer2);
-  thread->pos_low = 0;
-  thread->pos_current = 0;
-
-  /*
-  for (; thread->pos_current != thread->pos_high;)
-    build_prefilled_mac_ip_sctp_data_hdr (assoc, 2);
-
-  cell = pop_ringbuf (assoc->bundling);
-  push_ringbuf (assoc->tx_ring, cell->packet, cell->plen);
-   */
 
   if (pthread_join (cons, NULL) != 0)
     return 0;

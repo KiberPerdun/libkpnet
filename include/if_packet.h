@@ -41,7 +41,7 @@ typedef struct frame_sync_ip_tcp
 } frame_sync_ip_tcp_t;
 
 #include <stdbool.h>
-
+#include "ring_buffer.h"
 #include <setjmp.h>
 
 typedef struct frame_data
@@ -104,11 +104,6 @@ typedef struct ipv4_hdr {
   u32 src_addr;
   u32 dest_addr;
 } ipv4_t;
-
-typedef struct connection_ip_sctp_state
-{
-  SCTP_STATUS_T status;
-} connection_ip_sctp_state_t;
 
 typedef struct connection_args
 {

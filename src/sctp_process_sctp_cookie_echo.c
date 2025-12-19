@@ -41,6 +41,10 @@ sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen)
   assoc->dst_tsn = cookie->dst_tsn;
   assoc->dst_ip = cookie->src_ip;
   assoc->dst_port = cookie->src_port;
+
+  assoc->rto = SCTP_RTO_MIN;
+  assoc->srtt = 0;
+  assoc->rttvar = 0;
   pthread_spin_unlock (&assoc->lock);
 
   build_prefilled_mac_ip_sctp_cookie_ack_hdr (assoc);
