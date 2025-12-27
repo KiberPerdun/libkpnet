@@ -157,8 +157,10 @@ create_server ()
 
   arg_tx.rb_prefill = rb_prefill;
 
+  /*
   if (pthread_create (&cons, NULL, eth_send_sctp, &arg_tx) != 0)
     return 0;
+    */
 
   sctp_init ();
 

@@ -32,7 +32,6 @@ typedef struct ringtimer_callback
 {
   u64 retries;
   u64 signal;
-  /* timer_callback callback; */
   struct ringtimer_callback *prev;
   struct ringtimer_callback *next;
 } ringtimer_callback_t;

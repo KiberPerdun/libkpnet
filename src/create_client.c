@@ -80,6 +80,7 @@ create_client ()
 
   ringbuf_t *allocator_2048 = create_allocator (2048, 256);
 
+  /*
   rb_arg_t arg_tx;
   arg_tx.allocator = allocator_2048;
   arg_tx.eth = eth;
@@ -93,6 +94,7 @@ create_client ()
   arg_rx.rb = rb_rx;
   if (pthread_create (&prod, NULL, recv_sctp_packet, &arg_rx) != 0)
     return 0;
+    */
 
   dst_port = 80;
   src_port = get_random_u16 ();
@@ -159,8 +161,6 @@ create_client ()
   assoc->bundling = create_ringbuf (256);
   assoc->id = get_random_u16 ();
   pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
-  assoc->tx_ring = rb_tx;
-  assoc->rx_ring = rb_rx;
   assoc->retry_ring = NULL;
   assoc->ulp = ulp;
   assoc->base = frame;
@@ -168,10 +168,11 @@ create_client ()
   assoc->mis = htons (16);
   assoc->base->state = meta;
   assoc->mtu = 1500 - sizeof (mac_t) - sizeof (ipv4_t) - sizeof (sctp_cmn_hdr_t);
+  assoc->eth = eth;
   ringbuf_cell_t *cell;
 
-  rb_prefill = create_ringbuf (rb_tx->size);
-  for (i32 i = 0; i < rb_tx->size; ++ i)
+  rb_prefill = create_ringbuf (256);
+  for (i32 i = 0; i < rb_prefill->size; ++ i)
     {
       frame->prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
       if (!frame->prefill)
@@ -192,15 +193,7 @@ create_client ()
     }
   assoc->prefilled_ring = rb_prefill;
 
-  arg_tx.rb_prefill = rb_prefill;
-
-  if (pthread_create (&cons, NULL, eth_send_sctp, &arg_tx) != 0)
-    return 0;
-
   sctp_init ();
-  /*
-   *
-   */
 
   assoc->status = SCTP_COOKIE_WAIT;
   ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
@@ -208,6 +201,7 @@ create_client ()
   g_global_time = update_time ();
   u64 handshake_retrans = 0;
   u64 t1_timer = SCTP_RTO_MIN / SCTP_TIMER_STEP;
+  sctp_prepare_packet (assoc);
   build_prefilled_mac_ip_sctp_init_hdr (assoc);
   insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer, assoc->timer);
   timer_tick_result_t timer_results;
@@ -222,11 +216,9 @@ create_client ()
       g_current_time = update_time ();
       for (; (g_current_time - g_global_time) >= SCTP_TIMER_STEP;)
         {
-          puts ("tick timer");
           timer_results = tick_ringtimer (assoc->timer);
           for (; timer_results.count > 0;)
             {
-              puts ("count");
               switch (timer_results.signals[--timer_results.count])
                 {
                 case (SCTP_T1_INIT_EXPIRE):
@@ -242,6 +234,7 @@ create_client ()
                   }
                 default:
                   break;
+
                 }
             }
           g_global_time += SCTP_TIMER_STEP;
@@ -330,11 +323,14 @@ create_client ()
   // ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
   assoc->events = events_allocator;
 
+  /*
   cell = pop_ringbuf (assoc->prefilled_ring);
   assoc->current_packet = cell->packet;
   assoc->remain_plen = assoc->mtu;
   assoc->cursor = cell->packet + sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t);
-  for (;;)
+  */
+  sctp_prepare_packet (assoc);
+   for (;;)
     {
       sctp_build_data_hdr (assoc, 0);
       sctp_build_data_hdr (assoc, 0);

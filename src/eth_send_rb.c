@@ -4,30 +4,36 @@
 
 #include "if_packet.h"
 
-_Noreturn u0 *
-eth_send_sctp (u0 *arg)
+u0
+eth_send_sctp (sctp_association_t *assoc)
 {
-  rb_arg_t *a = arg;
-  ringbuf_cell_t *cell;
+  sctp_cmn_hdr_t *cmn;
+  ipv4_t *ip;
+  u32 chk;
 
-  for (;;)
-    {
-      cell = pop_ringbuf (a->rb);
-      if (cell)
-        {
-          sctp_cmn_hdr_t *cmn;
-          cmn = cell->packet + sizeof (mac_t) + sizeof (ipv4_t);
-          cmn->check = 0;
-          cmn->check = ~(u32) generate_crc32c_on_crc32c ((const u8 *) cmn, cell->plen - sizeof (mac_t) - sizeof (ipv4_t ), 0xFFFFFFFF);
+  ip = assoc->current_packet + sizeof (mac_t);
+  cmn = assoc->current_packet + sizeof (mac_t) + sizeof (ipv4_t);
+  ip->len = htons ( assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t) + sizeof (ipv4_t));
+  chk = ip->check;
+  chk += htons (0) - ip->len;
+  if (chk > 0xFFFF)
+    chk = (chk & 0xFFFF) + (chk >> 16);
 
-          if (eth_send (a->eth, cell->packet, cell->plen) < 0)
-            continue;
+  ip->check = chk;
+  cmn->check = 0;
+  cmn->check = ~(u32)generate_crc32c_on_crc32c (
+      (const u8 *)cmn,
+      assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t),
+      0xFFFFFFFF);
 
-          else
-            push_ringbuf (a->rb_prefill, cell->packet, cell->plen);
-        }
+retry:
+  if (eth_send (
+          assoc->eth, assoc->current_packet,
+          assoc->mtu - assoc->remain_plen
+              + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)))
+      < 0)
+    goto retry;
 
-      else
-        sched_yield ();
-    }
+  else
+    push_ringbuf (assoc->prefilled_ring, assoc->current_packet, 2048);
 }

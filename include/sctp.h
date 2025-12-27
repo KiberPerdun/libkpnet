@@ -83,7 +83,7 @@ typedef enum SCTP_SIGNALS
 #define SCTP_HB_MAX_BURST 1
 #define SCTP_SACK_DELAY 200
 
-#define SCTP_TIMER_STEP 100
+#define SCTP_TIMER_STEP 1000
 
 #define SCTP_UNFRAGMENTED (SCTP_BBIT | SCTP_EBIT)
 
@@ -365,6 +365,8 @@ typedef struct sctp_association
   u16 id;
   SCTP_STATUS_T status;
 
+  eth_t *eth;
+
   u32 ver_tag;
   u32 init_tag;
   u32 a_rwnd;
@@ -436,6 +438,10 @@ i64 sctp_process_sctp_init_ack (sctp_association_t *assoc, u0 *packet, u32 plen)
 i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_data (sctp_association_t *assoc, u0 *packet, u32 plen);
+
+u0 eth_send_sctp (sctp_association_t *assoc);
+
+i64 sctp_prepare_packet (sctp_association_t *assoc);
 
 u64 update_time (u0);
 

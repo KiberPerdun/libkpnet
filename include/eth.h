@@ -46,8 +46,6 @@ typedef struct
   eth_t *eth;
 } rb_arg_t;
 
-_Noreturn u0 *eth_send_sctp (u0 *arg);
-
 eth_t *eth_open (const char *device);
 eth_t *eth_close (eth_t *eth);
 ssize_t eth_send (eth_t *eth, u8 *buf, u64 len);
