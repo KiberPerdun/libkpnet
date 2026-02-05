@@ -12,6 +12,7 @@ insert_ringtimer (u64 signal, u64 time, ringtimer_t *ring)
   ringbuf_cell_t *cell;
   u32 slot;
 
+  --time;
   slot = ring->current + time;
 
   for (; (cell = pop_ringbuf (ring->allocator)) == 0;)

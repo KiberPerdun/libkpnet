@@ -81,6 +81,7 @@ typedef struct frame_data
 #include <sched.h>
 #include <pthread.h>
 #include "sctp.h"
+#include "xdp.h"
 
 typedef struct ipv4_hdr {
 #if __BYTE_ORDER__ == __LITTLE_ENDIAN
@@ -203,6 +204,7 @@ bool if_ipv4_tcp (u0 *packet, u64 size, connection_args_t *args);
 bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
 u0 *if_ip_tcp (u0 *packet, u16 size, u0 *meta);
 u0 *if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc);
+i64 prefill_sctp_mac_ip (sctp_association_t *assoc, u64 mac_gateway, u64 mac_dev);
 
 frame_data_t *prefill_mac_ip_sctp_ (frame_data_t *frame);
 #endif // LIBKPNET_IF_PACKET_H

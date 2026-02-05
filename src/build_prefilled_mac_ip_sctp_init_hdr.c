@@ -19,10 +19,8 @@ build_prefilled_mac_ip_sctp_init_hdr (sctp_association_t *assoc)
   } hdr;
 
   ulp = assoc->ulp;
-  packet = assoc->current_packet;
-  packet += sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t) + sizeof (hdr);
+  packet = assoc->umem_hdrs_cursor;
 
-  packet -= sizeof (hdr);
   hdr.init.init_tag = get_random_from_buffer_u32 ();
   hdr.init.a_rwnd = htonl (ulp->src_arwnd);
   hdr.init.os = htons (ulp->src_os);

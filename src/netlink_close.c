@@ -4,7 +4,8 @@
 
 #include "netlink.h"
 
-i32 netlink_close (i32 fd)
+i32
+netlink_close (i32 fd)
 {
   if (close (fd) < 0)
     {

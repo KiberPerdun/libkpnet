@@ -11,8 +11,8 @@ eth_send_sctp (sctp_association_t *assoc)
   ipv4_t *ip;
   u32 chk;
 
-  ip = assoc->current_packet + sizeof (mac_t);
-  cmn = assoc->current_packet + sizeof (mac_t) + sizeof (ipv4_t);
+  ip = assoc->umem_hdrs + sizeof (mac_t);
+  cmn = assoc->umem_hdrs + sizeof (mac_t) + sizeof (ipv4_t);
   ip->len = htons ( assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t) + sizeof (ipv4_t));
   chk = ip->check;
   chk += htons (0) - ip->len;
@@ -25,15 +25,20 @@ eth_send_sctp (sctp_association_t *assoc)
       (const u8 *)cmn,
       assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t),
       0xFFFFFFFF);
+  u32 plen = assoc->mtu - assoc->remain_plen
+              + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t));
 
 retry:
+  if (xdp_tx (assoc->xdp, &assoc->umem_offset, &plen, 1) <= 0)
+    goto retry;
+  /*
   if (eth_send (
           assoc->eth, assoc->current_packet,
           assoc->mtu - assoc->remain_plen
               + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)))
       < 0)
     goto retry;
-
+*/
   else
     push_ringbuf (assoc->prefilled_ring, assoc->current_packet, 2048);
 }

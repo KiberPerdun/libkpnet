@@ -6,7 +6,8 @@
 
 #include <arpa/inet.h>
 
-i32 bind_if (i32 intf_index, const u32 ip)
+i32
+bind_if (i32 intf_index, const u32 ip)
 {
   struct rtattr *rta;
   struct ifaddrmsg *ifa;

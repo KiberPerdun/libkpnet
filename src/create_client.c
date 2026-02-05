@@ -32,12 +32,12 @@
 struct timespec _bench_start, _bench_end; \
 clock_gettime(CLOCK_MONOTONIC, &_bench_start);
 
-#define BENCH_END(name, ops) \
-clock_gettime(CLOCK_MONOTONIC, &_bench_end); \
-int64_t _ns = (_bench_end.tv_sec - _bench_start.tv_sec) * NS_PER_SEC + \
-(_bench_end.tv_nsec - _bench_start.tv_nsec); \
-printf("%s: %ld ns total, %.2f ns/op, %.2f Mops/sec\n", \
-name, _ns, (double)_ns/(ops), ((double)ops*1e3)/_ns);
+#define BENCH_END(name, ops)                                                  \
+  clock_gettime (CLOCK_MONOTONIC, &_bench_end);                               \
+  int64_t _ns = (_bench_end.tv_sec - _bench_start.tv_sec) * NS_PER_SEC        \
+                + (_bench_end.tv_nsec - _bench_start.tv_nsec);                \
+  printf ("%s: %ld ns total, %.2f ns/op, %.2f Mops/sec\n", name, _ns,         \
+          (double)_ns / (ops), ((double)ops * 1e3) / _ns);
 
 #define MAX_PACKET_LEN 1516
 u0 *
@@ -55,6 +55,9 @@ create_client ()
   static u64 g_global_time;
   static u64 g_current_time;
   g_global_time = update_time ();
+
+  umem_stack_t *stack = create_umem_stack (UMEM_CHUNK_COUNT, UMEM_CHUNK_SIZE);
+  xdp_t *xdp = xdp_open (CLIENT_INAME);
 
   if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
@@ -169,6 +172,11 @@ create_client ()
   assoc->base->state = meta;
   assoc->mtu = 1500 - sizeof (mac_t) - sizeof (ipv4_t) - sizeof (sctp_cmn_hdr_t);
   assoc->eth = eth;
+  assoc->xdp = xdp;
+  assoc->stack = stack;
+  assoc->umem_offset = umem_stack_pop (stack);
+  assoc->umem_hdrs = xdp->umem + assoc->umem_offset;
+  prefill_sctp_mac_ip (assoc, *((u64 *) meta->gateway), *((u64 *) meta->dev));
   ringbuf_cell_t *cell;
 
   rb_prefill = create_ringbuf (256);
@@ -201,7 +209,7 @@ create_client ()
   g_global_time = update_time ();
   u64 handshake_retrans = 0;
   u64 t1_timer = SCTP_RTO_MIN / SCTP_TIMER_STEP;
-  sctp_prepare_packet (assoc);
+  //sctp_prepare_packet (assoc);
   build_prefilled_mac_ip_sctp_init_hdr (assoc);
   insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer, assoc->timer);
   timer_tick_result_t timer_results;
@@ -239,7 +247,6 @@ create_client ()
             }
           g_global_time += SCTP_TIMER_STEP;
         }
-      usleep (30000);
     }
 
   BENCH_START ()
@@ -359,6 +366,7 @@ cleanup:
   free (state);
   free (packet);
   free (frame);
+  free (xdp);
   return NULL;
 }
 #undef MAX_PACKET_LEN

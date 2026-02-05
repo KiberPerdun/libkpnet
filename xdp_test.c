@@ -1,32 +1,23 @@
-#include <linux/bpf.h>
+// xdp_test.bpf.c
+#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 
-#ifndef __section
-# define __section(NAME)                  \
-__attribute__((section(NAME), used))
-#endif
+struct {
+  __uint(type, BPF_MAP_TYPE_XSKMAP);
+  __type(key, __u32);
+  __type(value, __u32);
+  __uint(max_entries, 64);
+} xsks_map SEC(".maps");
 
-/*
- * clang -O2 -target bpf -c xdp_test.c -o xdp_prog.o
- * sudo ip link set dev wlan0-virt xdp obj xdp_prog.o
- * sudo ip link set dev wlan0-virt xdp off
- */
-
-__section("prog")
-int
-xdp_drop (struct xdp_md *ctx)
+SEC("xdp")
+int kp_xdp_redirect(struct xdp_md *ctx)
 {
-  return XDP_DROP;
+  __u32 index = ctx->rx_queue_index;
+
+  if (bpf_map_lookup_elem(&xsks_map, &index))
+    return bpf_redirect_map(&xsks_map, index, 0);
+
+  return XDP_PASS;
 }
 
-char __license[] __section("license") = "GPL";
-
-/*
-enum xdp_action {
-  XDP_ABORTED = 0,
-  XDP_DROP,
-  XDP_PASS,
-  XDP_TX,
-  XDP_REDIRECT,
-};
-*/
+char LICENSE[] SEC("license") = "GPL";

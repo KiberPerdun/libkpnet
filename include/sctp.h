@@ -9,6 +9,8 @@
 #include "malloc.h"
 #include "stdbool.h"
 #include "types.h"
+#include "xdp.h"
+
 #include <netinet/in.h>
 
 typedef enum SCTP_STATUS
@@ -366,6 +368,7 @@ typedef struct sctp_association
   SCTP_STATUS_T status;
 
   eth_t *eth;
+  xdp_t *xdp;
 
   u32 ver_tag;
   u32 init_tag;
@@ -376,6 +379,13 @@ typedef struct sctp_association
   u16 mis;
   u32 tsn;
   u32 dst_tsn;
+
+  umem_stack_t *stack;
+  u0 *umem_hdrs;
+  u32 umem_hdrs_basic_len;
+  u32 umem_hdrs_len;
+  u0 *umem_hdrs_cursor;
+  u64 umem_offset;
 
   u32 srtt;
   u32 rttvar;

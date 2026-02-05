@@ -4,194 +4,161 @@
 
 #include "eth.h"
 #include "netlink.h"
-
 #include <netinet/in.h>
+#include "xdp.h"
 
-static i32
-xdp_init_ring (struct xdp_ring_offset *ring, u0 *map, u32 entrs)
-{
-  ring->producer = (i64) map;
-  ring->consumer = (i64) map + sizeof (u32);
-  ring->desc = (i64) map + 2 * sizeof (u32);
-  *(u32 *) ring->producer = 0;
-  *(u32 *) ring->consumer = 0;
-
-  return 0;
-}
-
+#define RING_DESC_SZ (UMEM_CHUNK_COUNT * sizeof (struct xdp_desc))
+#define RING_ADDR_SZ (UMEM_CHUNK_COUNT * sizeof (u64))
 xdp_t *
-xdp_open (const char *device, u32 queue_id)
+xdp_open (const char *device)
 {
-  xdp_t *xsk = calloc (1, sizeof (xdp_t));
+  xdp_mmap_offsets_t offsets;
+  sockaddr_xdp_t sockaddr;
+  xdp_umem_reg_t umem_reg;
+  socklen_t offsets_len;
+  static i32 ring_size;
+  xdp_t *xdp;
 
-  if (xsk == NULL)
-    return NULL;
+  xdp = NULL;
 
-  xsk->fd = socket (AF_XDP, SOCK_RAW, 0);
-  if (xsk->fd < 0)
-    {
-      free (xsk);
-      return NULL;
-    }
+  xdp = (xdp_t *) malloc (sizeof (xdp_t));
+  if (!xdp)
+      goto err_malloc;
 
-  xsk->ifindex = get_ifid (device);
-  xsk->queue_id = queue_id;
+  memset (xdp, 0, sizeof (xdp_t));
+  xdp->fd = socket (AF_XDP, SOCK_RAW, 0);
+  if (xdp->fd < 0)
+      goto err_fd;
 
-  xsk->umem_size = NUM_FRAMES * FRAME_SIZE;
-  xsk->umem = mmap (NULL, xsk->umem_size, PROT_READ | PROT_WRITE,
-                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+  xdp->umem = mmap (NULL, UMEM_LEN, PROT_READ | PROT_WRITE,MAP_PRIVATE
+    | MAP_ANONYMOUS | MAP_POPULATE | MAP_LOCKED,-1, 0);
+  if (xdp->umem == MAP_FAILED)
+      goto err_umem_mmap;
 
-  if (xsk->umem == MAP_FAILED)
-    {
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  umem_reg.addr = (__u64) xdp->umem;
+  umem_reg.len = UMEM_LEN;
+  umem_reg.chunk_size = UMEM_CHUNK_SIZE;
+  umem_reg.headroom = 0;
+  umem_reg.flags = 0;
 
-  struct xdp_umem_reg umem_reg =
-    {
-      .addr = (u64) xsk->umem,
-      .len = xsk->umem_size,
-      .chunk_size = FRAME_SIZE,
-      .headroom = 0,
-      .flags = 0
-    };
+  if (setsockopt (xdp->fd, SOL_XDP, XDP_UMEM_REG, &umem_reg, sizeof (umem_reg)) < 0)
+    goto err_umem_reg;
 
-  if (setsockopt (xsk->fd, SOL_XDP, XDP_UMEM_REG, &umem_reg, sizeof (umem_reg)))
-    {
-      perror ("Failed to register umem");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  ring_size = UMEM_CHUNK_COUNT;
+  if (setsockopt (xdp->fd, SOL_XDP, XDP_RX_RING, &ring_size, sizeof (ring_size)) < 0)
+    goto err_ring;
 
-  /* rings setup */
-  socklen_t optlen = sizeof (xdp_mmap_offsets_t);
+  if (setsockopt (xdp->fd, SOL_XDP, XDP_TX_RING, &ring_size, sizeof (ring_size)) < 0)
+    goto err_ring;
 
-  if (getsockopt (xsk->fd, SOL_XDP, XDP_MMAP_OFFSETS, &xsk->offsets, &optlen) < 0)
-    {
-      perror ("Failed to get mmap offsets");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  if (setsockopt (xdp->fd, SOL_XDP, XDP_UMEM_FILL_RING, &ring_size, sizeof (ring_size)) < 0)
+    goto err_ring;
 
-  u32 ds = NUM_FRAMES / 2;
-  if (setsockopt (xsk->fd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &ds, sizeof (ds)))
-    {
-      perror ("Failed to config completion ring");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  if (setsockopt (xdp->fd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &ring_size, sizeof (ring_size)) < 0)
+    goto err_ring;
 
-  ds = NUM_FRAMES / 2;
-  if (setsockopt (xsk->fd, SOL_XDP, XDP_UMEM_FILL_RING, &ds, sizeof (ds)))
-    {
-      perror ("Failed to config fill ring");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  memset (&offsets, 0, sizeof (offsets));
+  offsets_len = sizeof (offsets);
 
-  ds = NUM_FRAMES / 2;
-  if (setsockopt (xsk->fd, SOL_XDP, XDP_TX_RING, &ds, sizeof (ds)))
-    {
-      perror ("Failed to config tx ring");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  if (getsockopt (xdp->fd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &offsets_len) < 0)
+    goto err_xdp_offsets;
 
-  ds = NUM_FRAMES / 2;
-  if (setsockopt (xsk->fd, SOL_XDP, XDP_RX_RING, &ds, sizeof (ds)))
-    {
-      perror ("Failed to config rx ring");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  xdp->rx_ring_mmap = mmap (
+      NULL,
+      offsets.rx.desc + RING_DESC_SZ,
+      PROT_READ|PROT_WRITE,
+      MAP_SHARED|MAP_POPULATE,
+      xdp->fd,
+      XDP_PGOFF_RX_RING);
 
-  u0 *map_fr = mmap (NULL, xsk->offsets.fr.desc + (NUM_FRAMES / 2) * sizeof (u32), PROT_READ | PROT_WRITE,
-                    MAP_SHARED | MAP_POPULATE, xsk->fd, XDP_UMEM_PGOFF_FILL_RING);
-  if (map_fr == MAP_FAILED)
-    {
-      perror ("Failed mmap fr");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
-  xdp_init_ring (&xsk->offsets.fr, map_fr, NUM_FRAMES / 2);
+  if (xdp->rx_ring_mmap == MAP_FAILED)
+    goto err_rx_ring;
 
-  u0 *map_cr = mmap (NULL, xsk->offsets.cr.desc + (NUM_FRAMES / 2) * sizeof (u32), PROT_READ | PROT_WRITE,
-                  MAP_SHARED | MAP_POPULATE, xsk->fd, XDP_UMEM_PGOFF_COMPLETION_RING);
-  if (map_cr == MAP_FAILED)
-    {
-      perror ("Failed mmap cr");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
-  xdp_init_ring (&xsk->offsets.cr, map_cr, NUM_FRAMES / 2);
+  xdp->tx_ring_mmap = mmap (
+    NULL,
+    offsets.tx.desc + RING_DESC_SZ,
+    PROT_READ|PROT_WRITE,
+    MAP_SHARED|MAP_POPULATE,
+    xdp->fd,
+    XDP_PGOFF_TX_RING);
 
-  u0 *map_rx = mmap (NULL, xsk->offsets.rx.desc + (NUM_FRAMES / 2) * sizeof (u32), PROT_READ | PROT_WRITE,
-                  MAP_SHARED | MAP_POPULATE, xsk->fd, XDP_PGOFF_RX_RING);
-  if (map_rx == MAP_FAILED)
-    {
-      perror ("Failed mmap rx");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
-  xdp_init_ring (&xsk->offsets.rx, map_rx, NUM_FRAMES / 2);
+  if (xdp->tx_ring_mmap == MAP_FAILED)
+    goto err_tx_ring;
 
-  u0 *map_tx = mmap (NULL, xsk->offsets.tx.desc + (NUM_FRAMES / 2) * sizeof (u32), PROT_READ | PROT_WRITE,
-                  MAP_SHARED | MAP_POPULATE, xsk->fd, XDP_PGOFF_TX_RING);
-  if (map_tx == MAP_FAILED)
-    {
-      perror ("Failed mmap tx");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
-  xdp_init_ring (&xsk->offsets.tx, map_tx, NUM_FRAMES / 2);
+  xdp->fill_ring_mmap = mmap (
+    NULL,
+    offsets.fr.desc + RING_ADDR_SZ,
+    PROT_READ|PROT_WRITE,
+    MAP_SHARED|MAP_POPULATE,
+    xdp->fd,
+    XDP_UMEM_PGOFF_FILL_RING);
 
-  u32 idx = 0;
-  u64 *fill = (u64 *) xsk->offsets.fr.desc;
-  for (i32 i = 0; i < NUM_FRAMES / 2; ++i)
-    {
-      *fill = idx * FRAME_SIZE;
-      ++fill;
-      ++idx;
-    }
+  if (xdp->fill_ring_mmap == MAP_FAILED)
+    goto err_fr_ring;
 
-  *(u32 *) xsk->offsets.fr.producer = NUM_FRAMES / 2;
+  xdp->completion_ring_mmap = mmap (
+      NULL,
+      offsets.cr.desc + RING_ADDR_SZ,
+      PROT_READ|PROT_WRITE,
+      MAP_SHARED|MAP_POPULATE,
+      xdp->fd,
+      XDP_UMEM_PGOFF_COMPLETION_RING);
 
-  struct sockaddr_xdp addr = {
-    .sxdp_family = AF_XDP,
-    .sxdp_ifindex = xsk->ifindex,
-    .sxdp_queue_id = xsk->queue_id,
-    .sxdp_flags = 0
-  };
+  if (xdp->completion_ring_mmap == MAP_FAILED)
+    goto err_cr_ring;
 
-  if (bind (xsk->fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
-      perror ("Failed to bind xdp socket");
-      munmap (xsk->umem, xsk->umem_size);
-      close (xsk->fd);
-      free (xsk);
-      return NULL;
-    }
+  xdp->rx_ring_consumer = xdp->rx_ring_mmap + offsets.rx.consumer;
+  xdp->rx_ring_producer = xdp->rx_ring_mmap + offsets.rx.producer;
+  xdp->rx_ring = xdp->rx_ring_mmap + offsets.rx.desc;
 
-  return xsk;
+  xdp->tx_ring_consumer = xdp->tx_ring_mmap + offsets.tx.consumer;
+  xdp->tx_ring_producer = xdp->tx_ring_mmap + offsets.tx.producer;
+  xdp->tx_ring = xdp->tx_ring_mmap + offsets.tx.desc;
+
+  xdp->fill_ring_consumer = xdp->fill_ring_mmap + offsets.fr.consumer;
+  xdp->fill_ring_producer = xdp->fill_ring_mmap + offsets.fr.producer;
+  xdp->fill_ring = xdp->fill_ring_mmap + offsets.fr.desc;
+
+  xdp->completion_ring_consumer = xdp->completion_ring_mmap + offsets.cr.consumer;
+  xdp->completion_ring_producer = xdp->completion_ring_mmap + offsets.cr.producer;
+  xdp->completion_ring = xdp->completion_ring_mmap + offsets.cr.desc;
+
+  sockaddr.sxdp_family = AF_XDP;
+  sockaddr.sxdp_flags = XDP_COPY;
+  sockaddr.sxdp_ifindex = get_ifid (device);
+  sockaddr.sxdp_queue_id = 0;
+  sockaddr.sxdp_shared_umem_fd = xdp->fd;
+
+  if (bind (xdp->fd, (struct sockaddr *) &sockaddr, sizeof (sockaddr_xdp_t)) < 0)
+    goto err_bind;
+
+  return xdp;
+err_bind:
+err_cr_ring:
+  munmap (xdp->completion_ring_mmap, offsets.cr.desc + RING_ADDR_SZ);
+
+err_fr_ring:
+  munmap (xdp->fill_ring_mmap, offsets.fr.desc + RING_ADDR_SZ);
+
+err_tx_ring:
+  munmap (xdp->tx_ring_mmap, offsets.tx.desc + RING_DESC_SZ);
+
+err_rx_ring:
+  munmap (xdp->rx_ring_mmap, offsets.rx.desc + RING_DESC_SZ);
+
+err_xdp_offsets:
+err_ring:
+err_umem_reg:
+  munmap (xdp->umem, UMEM_LEN);
+
+err_umem_mmap:
+  close (xdp->fd);
+
+err_fd:
+err_malloc:
+  free (xdp);
+
+  return NULL;
 }
+#undef RING_DESC_SZ
+#undef RING_ADDR_SZ

@@ -91,14 +91,6 @@ build_prefilled_mac_ip_sctp_data_hdr (sctp_association_t *assoc, u16 stream_id)
   ip = (u0 *) cmn - sizeof (ipv4_t);
   ip->check = 0;
   ip->check = tcp_checksum ((u0 *) ip, 20);
-  /* TODO! Вернуть старое дополнение чек-суммы */
-  /*
-  chk = ip->check;
-  ip->len = htons (plen - sizeof (mac_t));
-  chk += htons (0) - ip->len;
-  if (chk > 0xFFFF)
-    chk = (chk & 0xFFFF) + (chk >> 16);
-  ip->check = chk; */
 
   cmn->tag = assoc->ver_tag;
   cmn->check = 0;

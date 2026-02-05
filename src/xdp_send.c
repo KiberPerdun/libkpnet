@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+/*
 i32
 xdp_send (xdp_t *xsk, u8 *buf, u64 len)
 {
@@ -90,3 +91,4 @@ xdp_send (xdp_t *xsk, u8 *buf, u64 len)
 
   return (ret < 0 && errno != EAGAIN && errno != EBUSY) ? -1 : 0;
 }
+*/

@@ -112,6 +112,15 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         sctp_build_data_hdr.c
         update_time.c
         sctp_prepare_packet.c
+        ../include/xdp.h
+        xdp_rx.c
+        xdp_tx.c
+        xdp_tx_sg.c
+        xdp_complete_tx.c
+        create_umem_stack.c
+        umem_stack_pop.c
+        umem_stack_push.c
+        prefill_sctp_mac_ip.c
 )
 
 add_executable(src ${SOURCES})
