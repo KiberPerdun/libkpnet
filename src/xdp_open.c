@@ -39,7 +39,7 @@ xdp_open (const char *device)
   umem_reg.len = UMEM_LEN;
   umem_reg.chunk_size = UMEM_CHUNK_SIZE;
   umem_reg.headroom = 0;
-  umem_reg.flags = 0;
+  umem_reg.flags = XDP_UMEM_UNALIGNED_CHUNK_FLAG;
 
   if (setsockopt (xdp->fd, SOL_XDP, XDP_UMEM_REG, &umem_reg, sizeof (umem_reg)) < 0)
     goto err_umem_reg;
@@ -124,7 +124,7 @@ xdp_open (const char *device)
   xdp->completion_ring = xdp->completion_ring_mmap + offsets.cr.desc;
 
   sockaddr.sxdp_family = AF_XDP;
-  sockaddr.sxdp_flags = XDP_COPY;
+  sockaddr.sxdp_flags = XDP_COPY | XDP_USE_SG;
   sockaddr.sxdp_ifindex = get_ifid (device);
   sockaddr.sxdp_queue_id = 0;
   sockaddr.sxdp_shared_umem_fd = xdp->fd;

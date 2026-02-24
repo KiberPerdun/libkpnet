@@ -121,6 +121,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         umem_stack_pop.c
         umem_stack_push.c
         prefill_sctp_mac_ip.c
+        sctp_push_to_xdp_segs.c
 )
 
 add_executable(src ${SOURCES})

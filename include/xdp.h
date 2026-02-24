@@ -96,7 +96,7 @@ typedef struct xdp_sg_req
 
 xdp_t *xdp_open (const char *device);
 u32 xdp_rx (xdp_t *xsk, u64 *out, u32 *out_lens, u32 max_n);
-u32 xdp_tx (xdp_t *xsk, u64 *addrs, u32 *lens, u32 n);
+u32 xdp_tx (xdp_t *xsk, u0 **xdp_segs, const u32 *xdp_seg_lens, u32 n);
 u32 xdp_tx_sg (xdp_t *xsk, xdp_sg_req_t *reqs, u32 n);
 u32 xdp_complete_tx (xdp_t *xsk, u64 *addr, u32 max_n);
 

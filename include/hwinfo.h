@@ -11,7 +11,7 @@
 #include "if_packet.h"
 
 #ifdef _SC_LEVEL1_DCACHE_LINESIZE
-#define CACHELINE_SIZE sysconf(_SC_LEVEL1_DCACHE_LINESIZE)
+#define CACHELINE_SIZE sysconf (_SC_LEVEL1_DCACHE_LINESIZE)
 #else
 #define CACHELINE_SIZE 64
 #endif

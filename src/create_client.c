@@ -58,6 +58,8 @@ create_client ()
 
   umem_stack_t *stack = create_umem_stack (UMEM_CHUNK_COUNT, UMEM_CHUNK_SIZE);
   xdp_t *xdp = xdp_open (CLIENT_INAME);
+  if (NULL == xdp)
+    goto cleanup;
 
   if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
     goto cleanup;
@@ -85,13 +87,13 @@ create_client ()
 
   /*
   rb_arg_t arg_tx;
-  arg_tx.allocator = allocator_2048;
+  arg_tx.allocator_2048 = allocator_2048;
   arg_tx.eth = eth;
   rb_tx = create_ringbuf (64);
   arg_tx.rb = rb_tx;
 
   rb_arg_t arg_rx;
-  arg_rx.allocator = allocator_2048;
+  arg_rx.allocator_2048 = allocator_2048;
   arg_rx.eth = eth;
   rb_rx = create_ringbuf (1024);
   arg_rx.rb = rb_rx;
@@ -160,7 +162,7 @@ create_client ()
 
   memset (&assoc->rtt, 0, sizeof (sctp_chunk_slot_t) * RTX_BUFFER_SIZE);
   ringbuf_t *allocator = create_allocator (64, 256);
-  assoc->events_allocator = allocator;
+  assoc->allocator_64 = allocator;
   assoc->bundling = create_ringbuf (256);
   assoc->id = get_random_u16 ();
   pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
@@ -174,34 +176,19 @@ create_client ()
   assoc->eth = eth;
   assoc->xdp = xdp;
   assoc->stack = stack;
-  assoc->umem_offset = umem_stack_pop (stack);
   assoc->umem_hdrs = xdp->umem + assoc->umem_offset;
-  prefill_sctp_mac_ip (assoc, *((u64 *) meta->gateway), *((u64 *) meta->dev));
+  assoc->xdp_seg_count = 0;
   ringbuf_cell_t *cell;
 
-  rb_prefill = create_ringbuf (256);
-  for (i32 i = 0; i < rb_prefill->size; ++ i)
-    {
-      frame->prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
-      if (!frame->prefill)
-        {
-          cell = pop_ringbuf (rb_prefill);
-          for (; cell; cell = pop_ringbuf (rb_prefill))
-            {
-              free (cell->packet);
-              free (cell);
-            }
-          free (frame->prefill);
-          goto cleanup;
-        }
-
-      frame = prefill_mac_ip_sctp (frame);
-      push_ringbuf (rb_prefill, frame->prefill, frame->plen);
-      frame->plen = 0;
-    }
-  assoc->prefilled_ring = rb_prefill;
+  assoc->prefilled_umem_packet = xdp->umem + umem_stack_pop (stack);
+  prefill_sctp_mac_ip (assoc, *((u64 *) meta->gateway), *((u64 *) meta->dev));
 
   sctp_init ();
+  sctp_prepare_packet (assoc);
+  //assoc->umem_offset = umem_stack_pop (stack);
+  //assoc->umem_hdrs_cursor = assoc->umem_offset;
+  assoc->umem_hdrs = xdp->umem + assoc->prefilled_umem_packet_len;
+  assoc->umem_hdrs_cursor = assoc->umem_hdrs;
 
   assoc->status = SCTP_COOKIE_WAIT;
   ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
@@ -209,7 +196,6 @@ create_client ()
   g_global_time = update_time ();
   u64 handshake_retrans = 0;
   u64 t1_timer = SCTP_RTO_MIN / SCTP_TIMER_STEP;
-  //sctp_prepare_packet (assoc);
   build_prefilled_mac_ip_sctp_init_hdr (assoc);
   insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer, assoc->timer);
   timer_tick_result_t timer_results;
@@ -236,7 +222,7 @@ create_client ()
                         = MIN (t1_timer * 2, SCTP_RTO_MAX / SCTP_TIMER_STEP);
                     insert_ringtimer (SCTP_T1_INIT_EXPIRE, t1_timer,
                                       assoc->timer);
-                    build_prefilled_mac_ip_sctp_init_hdr (assoc);
+                    eth_send_sctp (assoc);
                     ++handshake_retrans;
                     break;
                   }
@@ -327,7 +313,7 @@ create_client ()
   thread->pos_low = 0;
   thread->pos_current = 0;
 
-  // ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
+  // ringbuf_t *allocator_64 = create_allocator (CACHELINE_SIZE, 256);
   assoc->events = events_allocator;
 
   /*

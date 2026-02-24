@@ -2,43 +2,29 @@
 // Created by KiberPerdun on 9/26/25.
 //
 
+#include "checks.h"
 #include "if_packet.h"
 
-u0
+i64
 eth_send_sctp (sctp_association_t *assoc)
 {
-  sctp_cmn_hdr_t *cmn;
-  ipv4_t *ip;
-  u32 chk;
-
-  ip = assoc->umem_hdrs + sizeof (mac_t);
-  cmn = assoc->umem_hdrs + sizeof (mac_t) + sizeof (ipv4_t);
-  ip->len = htons ( assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t) + sizeof (ipv4_t));
-  chk = ip->check;
-  chk += htons (0) - ip->len;
-  if (chk > 0xFFFF)
-    chk = (chk & 0xFFFF) + (chk >> 16);
-
-  ip->check = chk;
-  cmn->check = 0;
-  cmn->check = ~(u32)generate_crc32c_on_crc32c (
-      (const u8 *)cmn,
-      assoc->mtu - assoc->remain_plen + sizeof (sctp_cmn_hdr_t),
-      0xFFFFFFFF);
-  u32 plen = assoc->mtu - assoc->remain_plen
-              + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t));
+  struct __attribute__ ((packed))
+  {
+    u8 mac[14];
+    ipv4_t ip;
+    sctp_cmn_hdr_t sctp;
+  } *hdr;
+  hdr = assoc->prefilled_umem_packet;
+  hdr->ip.len = htons (assoc->mtu - assoc->remain_plen + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t));
 
 retry:
-  if (xdp_tx (assoc->xdp, &assoc->umem_offset, &plen, 1) <= 0)
+  if (xdp_tx (assoc->xdp, assoc->xdp_segs, assoc->xdp_seg_lens, assoc->xdp_seg_count) <= 0)
     goto retry;
+
   /*
-  if (eth_send (
-          assoc->eth, assoc->current_packet,
-          assoc->mtu - assoc->remain_plen
-              + (sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t)))
-      < 0)
-    goto retry;
-*/
   else
     push_ringbuf (assoc->prefilled_ring, assoc->current_packet, 2048);
+    */
+
+  return 0;
 }

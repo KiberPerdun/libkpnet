@@ -400,7 +400,8 @@ typedef struct sctp_association
   ringbuf_t *rx_ring;
   ringbuf_t *retry_ring;
   ringbuf_t *prefilled_ring;
-  ringbuf_t *events_allocator;
+  ringbuf_t *allocator_64;
+  ringbuf_t *allocator_2048;
   ringbuf_t *bundling;
   frame_data_t *base; /* will be replaced with ulp config */
   sctp_ulp_config_t *ulp;
@@ -412,6 +413,13 @@ typedef struct sctp_association
   u0 *cursor;
   u32 remain_plen;
   sctp_chunk_slot_t rtx[RTX_BUFFER_SIZE];
+
+  u0 *prefilled_umem_packet;
+  u32 prefilled_umem_packet_len;
+#define XDP_MAX_SEGS 16
+  u0 *xdp_segs[XDP_MAX_SEGS];
+  u32 xdp_seg_lens[XDP_MAX_SEGS];
+  u32 xdp_seg_count;
 } sctp_association_t;
 
 typedef i64 (*sctp_process) (sctp_association_t *, u0 *, u32);
@@ -449,9 +457,12 @@ i64 sctp_process_sctp_cookie_echo (sctp_association_t *assoc, u0 *packet, u32 pl
 i64 sctp_process_sctp_cookie_ack (sctp_association_t *assoc, u0 *packet, u32 plen);
 i64 sctp_process_sctp_data (sctp_association_t *assoc, u0 *packet, u32 plen);
 
-u0 eth_send_sctp (sctp_association_t *assoc);
+i64 eth_send_sctp (sctp_association_t *assoc);
+i64 eth_receive_sctp (sctp_association_t *assoc);
 
 i64 sctp_prepare_packet (sctp_association_t *assoc);
+
+u64 sctp_push_to_xdp_segs (sctp_association_t *assoc, u64 len);
 
 u64 update_time (u0);
 

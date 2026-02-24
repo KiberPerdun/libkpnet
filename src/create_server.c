@@ -53,25 +53,6 @@ create_server ()
   ringbuf_t *allocator_2048 = create_allocator (2048, 256);
 
   eth = eth_open (SERVER_INAME);
-  rb_arg_t arg_tx;
-  arg_tx.allocator = allocator_2048;
-  arg_tx.eth = eth;
-  rb_tx = create_ringbuf (1024);
-  arg_tx.rb = rb_tx;
-
-  rb_arg_t arg_rx;
-  arg_rx.allocator = allocator_2048;
-  arg_rx.eth = eth;
-  rb_rx = create_ringbuf (1024);
-  arg_rx.rb = rb_rx;
-  if (pthread_create (&prod, NULL, recv_sctp_packet, &arg_rx) != 0)
-    return 0;
-
-  /*
-  pthread_t receiver;
-  if (pthread_create (&receiver, NULL, recv_packet_to_ring_buffer, eth) != 0)
-    return 0;
-    */
 
   src_port = 80;
 
@@ -118,23 +99,22 @@ create_server ()
     goto cleanup;
 
   ringbuf_t *allocator = create_allocator (64, 256);
-  assoc->events_allocator = allocator;
+  assoc->allocator_64 = allocator;
   assoc->bundling = create_ringbuf (256);
   assoc->id = get_random_u16 ();
   pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
-  assoc->tx_ring = rb_tx;
-  assoc->rx_ring = rb_rx;
   assoc->retry_ring = NULL;
   assoc->ulp = ulp;
   assoc->base = frame;
   assoc->status = SCTP_LISTEN;
   assoc->base->state = meta;
-  //assoc->ulp = ulp;
+  assoc->allocator_2048 = allocator_2048;
+  assoc->eth = eth;
 
   ringbuf_cell_t *cell;
 
-  rb_prefill = create_ringbuf (rb_tx->size);
-  for (i32 i = 0; i < rb_tx->size; ++ i)
+  rb_prefill = create_ringbuf (2048);
+  for (i32 i = 0; i < rb_prefill->size; ++ i)
     {
       frame->prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
       if (!frame->prefill)
@@ -154,13 +134,6 @@ create_server ()
       frame->plen = 0;
     }
   assoc->prefilled_ring = rb_prefill;
-
-  arg_tx.rb_prefill = rb_prefill;
-
-  /*
-  if (pthread_create (&cons, NULL, eth_send_sctp, &arg_tx) != 0)
-    return 0;
-    */
 
   sctp_init ();
 

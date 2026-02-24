@@ -7,13 +7,10 @@
 i64
 sctp_prepare_packet (sctp_association_t *assoc)
 {
-  ringbuf_cell_t *cell;
-  cell = pop_ringbuf (assoc->prefilled_ring);
-  if (!cell)
-    return -1;
-
-  assoc->current_packet = cell->packet;
-  assoc->cursor = assoc->current_packet + sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t );
+  assoc->xdp_seg_count = 0;
+  assoc->xdp_segs[0] = (u0 *) (assoc->prefilled_umem_packet - assoc->xdp->umem);
+  assoc->xdp_seg_lens[0] = assoc->prefilled_umem_packet_len;
+  ++assoc->xdp_seg_count;
   assoc->remain_plen = assoc->mtu;
 
   return 0;

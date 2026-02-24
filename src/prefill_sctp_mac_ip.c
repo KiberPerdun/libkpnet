@@ -17,6 +17,8 @@ prefill_sctp_mac_ip (sctp_association_t *assoc, u64 mac_gateway, u64 mac_dev)
     sctp_cmn_hdr_t sctp;
   } hdr;
 
+  packet = assoc->prefilled_umem_packet;
+
   hdr.sctp.check = 0;
   hdr.sctp.srcp = htons (assoc->ulp->src_port);
   hdr.sctp.dstp = htons (assoc->ulp->dst_port);
@@ -35,13 +37,14 @@ prefill_sctp_mac_ip (sctp_association_t *assoc, u64 mac_gateway, u64 mac_dev)
   hdr.ip.len = htons (0);
   hdr.ip.check = 0;
 
-  memcpy (assoc->umem_hdrs, &mac_gateway, 6);
-  memcpy (assoc->umem_hdrs + 6, &mac_dev, 6);
+  memcpy (packet, &mac_gateway, 6);
+  memcpy (packet + 6, &mac_dev, 6);
   u16 type_be = htons (ETHERTYPE_IP);
-  memcpy (assoc->umem_hdrs + 12, &type_be, 2);
-  memcpy (assoc->umem_hdrs + 14, &hdr, sizeof (hdr));
-  assoc->umem_hdrs_basic_len = sizeof (hdr) + 14;
-  assoc->umem_hdrs_cursor = assoc->umem_hdrs + assoc->umem_hdrs_basic_len;
+  memcpy (packet + 12, &type_be, 2);
+  memcpy (packet + 14, &hdr, sizeof (hdr));
+  assoc->prefilled_umem_packet_len = sizeof (hdr) + 14;
+ // assoc->umem_hdrs_basic_len = sizeof (hdr) + 14;
+  //assoc->umem_hdrs_cursor = assoc->umem_hdrs + assoc->umem_hdrs_basic_len;
 
   return 0;
 }

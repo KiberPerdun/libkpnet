@@ -34,8 +34,8 @@ build_prefilled_mac_ip_sctp_init_hdr (sctp_association_t *assoc)
   memcpy (packet, &hdr, sizeof (hdr));
 
   assoc->remain_plen -= sizeof (hdr);
+  sctp_push_to_xdp_segs (assoc, sizeof (hdr));
   eth_send_sctp (assoc);
-  sctp_prepare_packet (assoc);
 
   return 0;
 }
