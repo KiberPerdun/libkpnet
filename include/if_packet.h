@@ -197,6 +197,14 @@ typedef struct connection_sctp_state
   atomic_bool packet_proccessing;
 } connection_sctp_state_t;
 
+typedef struct kpnet_env
+{
+  xdp_t *xdp;
+  eth_t *eth;
+  umem_stack_t *stack;
+  umem_slab_allocator_t state_alloc;
+} kpnet_env_t;
+
 typedef bool (*lrcall_t)(u0 *, u64, connection_args_t *);
 typedef u0*   (*ifcall)(u0 *, u16, u0 *);
 
@@ -211,6 +219,9 @@ bool if_ipv4_sctp (u0 *packet, u64 size, connection_args_t *args);
 u0 *if_ip_tcp (u0 *packet, u16 size, u0 *meta);
 u0 *if_ip_sctp (u0 *packet, u16 size, sctp_association_t *assoc);
 i64 prefill_sctp_mac_ip (sctp_association_t *assoc, u64 mac_gateway, u64 mac_dev);
+
+kpnet_env_t *kpnet_env_init (const char *ifname);
+sctp_association_t *sctp_assoc_create (kpnet_env_t *env, u32 src_ip, u16 src_port, u32 dst_ip, u16 dst_port, u32 initial_state, const char *gw_ifname, const char *dev_ifname);
 
 frame_data_t *prefill_mac_ip_sctp_ (frame_data_t *frame);
 #endif // LIBKPNET_IF_PACKET_H

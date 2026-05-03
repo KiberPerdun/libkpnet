@@ -5,16 +5,16 @@
 #include "xdp.h"
 
 u32
-xdp_complete_tx (xdp_t *xsk, u64 *addr, u32 max_n)
+xdp_complete_tx (xdp_t *xsk, u64 *out_addrs, u32 max_n)
 {
   u32 prod, cons, n, i, idx;
-  xdp_desc_t *desc;
 
   prod = *xsk->completion_ring_producer;
   cons = *xsk->completion_ring_consumer;
+
   n = prod - cons;
 
-  if (0 == n)
+  if (__builtin_expect (0 == n, 0))
     return 0;
 
   if (n > max_n)
@@ -25,7 +25,7 @@ xdp_complete_tx (xdp_t *xsk, u64 *addr, u32 max_n)
   for (i = 0; i < n; ++i)
     {
       idx = (cons + i) & RING_MASK;
-      addr[i] = xsk->completion_ring[idx];
+      out_addrs[i] = xsk->completion_ring[idx];
     }
 
   ring_smp_wmb ();

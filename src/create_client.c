@@ -48,7 +48,6 @@ create_client ()
   u0 *packet = NULL, *prefill = NULL;
   ringbuf_t *rb_tx, *rb_rx, *rb_prefill;
   eth_t *eth;
-  u16 src_port, dst_port;
   frame_data_t *frame;
   thread_t cons, prod;
   sctp_thread_t *thread;
@@ -56,146 +55,24 @@ create_client ()
   static u64 g_current_time;
   g_global_time = update_time ();
 
-  umem_stack_t *stack = create_umem_stack (UMEM_CHUNK_COUNT, UMEM_CHUNK_SIZE);
-  xdp_t *xdp = xdp_open (CLIENT_INAME);
-  if (NULL == xdp)
-    goto cleanup;
-
-  if (!((frame = aligned_alloc (CACHELINE_SIZE, sizeof (frame_data_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  if (!((packet = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  if (!((state = aligned_alloc (CACHELINE_SIZE, sizeof (connection_sctp_state_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  if (!((prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  memset (prefill, 0, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
-  memset (packet, 0, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
-
-  frame->packet = packet;
-  frame->prefill = prefill;
-  frame->plen = MAX_PACKET_LEN;
-  frame->state = state;
-
-  eth = eth_open (CLIENT_INAME);
-
-  ringbuf_t *allocator_2048 = create_allocator (2048, 256);
-
-  /*
-  rb_arg_t arg_tx;
-  arg_tx.allocator_2048 = allocator_2048;
-  arg_tx.eth = eth;
-  rb_tx = create_ringbuf (64);
-  arg_tx.rb = rb_tx;
-
-  rb_arg_t arg_rx;
-  arg_rx.allocator_2048 = allocator_2048;
-  arg_rx.eth = eth;
-  rb_rx = create_ringbuf (1024);
-  arg_rx.rb = rb_rx;
-  if (pthread_create (&prod, NULL, recv_sctp_packet, &arg_rx) != 0)
-    return 0;
-    */
-
-  dst_port = 80;
-  src_port = get_random_u16 ();
+  kpnet_env_t *env = kpnet_env_init (CLIENT_INAME);
+  if (!env) return NULL;
 
   u32 src_ip = inet_addr ("192.168.1.2");
   u32 dst_ip = inet_addr ("192.168.1.3");
+  u16 src_port = get_random_u16 ();
+  u16 dst_port = 80;
 
-  if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
-  frame->state = meta;
-  meta->state = SCTP_INIT_SENT;
-  meta->src_ip = src_ip;
-  meta->dst_ip = dst_ip;
-  meta->src_port = src_port;
-  meta->dst_port = dst_port;
-  meta->src_arwnd = 65535;
-  meta->src_os = 32;
-  meta->src_mis = 32;
+  sctp_association_t *assoc = sctp_assoc_create (
+      env, src_ip, src_port, dst_ip, dst_port,
+      SCTP_INIT_SENT, CLIENT_INAME, SERVER_INAME);
 
-  if (get_ifmac (CLIENT_INAME, meta->gateway))
-    {
-      fputs ("Failed to get gateway interface mac\n", stderr);
-      goto cleanup;
-    }
-
-  if (get_ifmac (SERVER_INAME, meta->dev))
-    {
-      fputs ("Failed to get dev interface mac\n", stderr);
-      goto cleanup;
-    }
-
-  frame->sync = NULL;
-  frame->plen = 0;
-
-  generate_random_buffer ();
-
-  sctp_ulp_config_t *ulp;
-  if (!((ulp = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_ulp_config_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
+  if (!assoc)
     goto cleanup;
-
-  meta->state = SCTP_INIT_SENT;
-  meta->src_ip = src_ip;
-  meta->dst_ip = dst_ip;
-  meta->src_port = src_port;
-  meta->dst_port = dst_port;
-  meta->src_arwnd = 65535;
-  meta->src_os = 32;
-  meta->src_mis = 32;
-
-  ulp->src_ip = src_ip;
-  ulp->dst_ip = dst_ip;
-  ulp->src_port = src_port;
-  ulp->dst_port = dst_port;
-  ulp->src_arwnd = 65535;
-  ulp->src_os = 32;
-  ulp->src_mis = 32;
-
-  sctp_association_t *assoc;
-  if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  memset (&assoc->rtt, 0, sizeof (sctp_chunk_slot_t) * RTX_BUFFER_SIZE);
-  ringbuf_t *allocator = create_allocator (64, 256);
-  assoc->allocator_64 = allocator;
-  assoc->bundling = create_ringbuf (256);
-  assoc->id = get_random_u16 ();
-  pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
-  assoc->retry_ring = NULL;
-  assoc->ulp = ulp;
-  assoc->base = frame;
-  assoc->os = htons (16);
-  assoc->mis = htons (16);
-  assoc->base->state = meta;
-  assoc->mtu = 1500 - sizeof (mac_t) - sizeof (ipv4_t) - sizeof (sctp_cmn_hdr_t);
-  assoc->eth = eth;
-  assoc->xdp = xdp;
-  assoc->stack = stack;
-  assoc->umem_hdrs = xdp->umem + assoc->umem_offset;
-  assoc->xdp_seg_count = 0;
-
-  umem_slab_allocator_t state_alloc =
-  {
-    .free_list = NULL,
-    .cur_pos = NULL,
-    .cur_end = NULL,
-    .stack = stack
-  };
-
-  assoc->prefilled_umem_packet = slab_alloc_64b (&state_alloc, xdp->umem);
-  if (__builtin_expect (!assoc->prefilled_umem_packet, 0))
-    goto cleanup;
-
-  prefill_sctp_mac_ip (assoc, *((u64 *) meta->gateway), *((u64 *) meta->dev));
 
   sctp_init ();
   sctp_prepare_packet (assoc);
-  assoc->umem_hdrs_cursor = slab_alloc_64b (&state_alloc, xdp->umem);;
+  assoc->umem_hdrs_cursor = slab_alloc_64b (&env->state_alloc, env->xdp->umem);
 
   assoc->status = SCTP_COOKIE_WAIT;
   ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
@@ -351,14 +228,11 @@ create_client ()
 
 cleanup:
   eth_close (eth);
-  free (ulp);
   free (assoc);
   free (prefill);
-  free (meta);
   free (state);
   free (packet);
   free (frame);
-  free (xdp);
   return NULL;
 }
 #undef MAX_PACKET_LEN

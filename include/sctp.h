@@ -342,7 +342,7 @@ typedef struct sctp_chunk_slot
   u32 len;
 } sctp_chunk_slot_t;
 
-#define RTX_BUFFER_SIZE 16384
+#define RTX_BUFFER_SIZE 1024
 #define RTX_MASK (RTX_BUFFER_SIZE - 1)
 
 typedef enum sctp_events

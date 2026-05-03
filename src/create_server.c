@@ -30,135 +30,26 @@ create_server ()
   thread_t cons, prod;
   ringbuf_t *rb_tx, *rb_rx, *rb_prefill;
   eth_t *eth;
-  u16 src_port;
   frame_data_t *frame;
 
-  if (!((frame = malloc (sizeof (frame_data_t)))))
-    goto cleanup;
-
-  if (!((packet = calloc (1, MAX_PACKET_LEN))))
-    goto cleanup;
-
-  if (!((state = malloc (sizeof (connection_sctp_state_t)))))
-    goto cleanup;
-
-  atomic_init (&state->packet_proccessing, false);
-  atomic_init (&state->shutdown_requested, false);
-  frame->state = state;
-
-  frame->packet = packet;
-  frame->plen = 0;
-  frame->proto = PROTO_STACK_IP_TCP;
-
-  ringbuf_t *allocator_2048 = create_allocator (2048, 256);
-
-  eth = eth_open (SERVER_INAME);
-
-  src_port = 80;
+  kpnet_env_t *env = kpnet_env_init (SERVER_INAME);
+  if (!env) return NULL;
 
   u32 src_ip = inet_addr ("192.168.1.3");
+  u16 src_port = 80;
+  u32 dst_ip = ~0;
+  u16 dst_port = ~0;
 
-  sctp_ulp_config_t *ulp;
-  if (!((ulp = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_ulp_config_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
+  sctp_association_t *assoc = sctp_assoc_create (
+      env, src_ip, src_port, dst_ip, dst_port,
+      SCTP_LISTEN, SERVER_INAME, CLIENT_INAME);
+
+  if (!assoc)
     goto cleanup;
-
-  if_ip_sctp_meta_t *meta = calloc (sizeof (if_ip_sctp_meta_t), 1);
-  frame->state = meta;
-  meta->state = SCTP_LISTEN;
-  meta->src_ip = src_ip;
-  meta->src_port = src_port;
-  meta->src_arwnd = ~0;
-  meta->src_os = 32;
-  meta->src_mis = 32;
-
-  ulp->src_ip = src_ip;
-  ulp->dst_ip = ~0;
-  ulp->src_port = src_port;
-  ulp->dst_port = ~0;
-  ulp->src_arwnd = ~0;
-  ulp->src_os = 32;
-  ulp->src_mis = 32;
-
-  if (get_ifmac (SERVER_INAME, meta->dev))
-    {
-      fputs ("Failed to get dev interface mac\n", stderr);
-      goto cleanup;
-    }
-
-  if (get_ifmac (CLIENT_INAME, meta->gateway))
-    {
-      fputs ("Failed to get gateway interface mac\n", stderr);
-      goto cleanup;
-    }
-
-  if (!eth)
-    goto cleanup;
-
-  sctp_association_t *assoc;
-  if (!((assoc = aligned_alloc (CACHELINE_SIZE, sizeof (sctp_association_t) + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1)))))
-    goto cleanup;
-
-  ringbuf_t *allocator = create_allocator (64, 256);
-  assoc->allocator_64 = allocator;
-  assoc->bundling = create_ringbuf (256);
-  assoc->id = get_random_u16 ();
-  pthread_spin_init (&assoc->lock, PTHREAD_PROCESS_PRIVATE);
-  assoc->retry_ring = NULL;
-  assoc->ulp = ulp;
-  assoc->base = frame;
-  assoc->status = SCTP_LISTEN;
-  assoc->base->state = meta;
-  assoc->allocator_2048 = allocator_2048;
-  assoc->eth = eth;
-
-  ringbuf_cell_t *cell;
-
-  rb_prefill = create_ringbuf (2048);
-  for (i32 i = 0; i < rb_prefill->size; ++ i)
-    {
-      frame->prefill = aligned_alloc (CACHELINE_SIZE, MAX_PACKET_LEN + (CACHELINE_SIZE - 1) & ~(CACHELINE_SIZE - 1));
-      if (!frame->prefill)
-        {
-          cell = pop_ringbuf (rb_prefill);
-          for (; cell; cell = pop_ringbuf (rb_prefill))
-            {
-              free (cell->packet);
-              free (cell);
-            }
-          free (frame->prefill);
-          goto cleanup;
-        }
-
-      frame = prefill_mac_ip_sctp (frame);
-      push_ringbuf (rb_prefill, frame->prefill, frame->plen);
-      frame->plen = 0;
-    }
-  assoc->prefilled_ring = rb_prefill;
-
-  sctp_init ();
-
-  do
-    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
-      ;
-
-  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
-
-  do
-    for (; (cell = pop_ringbuf (rb_rx)) == 0;)
-      ;
-
-  while (if_ip_sctp (cell->packet, cell->plen, assoc) == 0);
-
-  if (pthread_join (cons, NULL) != 0)
-    return 0;
-
-  if (pthread_join (prod, NULL) != 0)
-    return 0;
 
 cleanup:
   eth_close (eth);
   free (state);
-  free (meta);
   free (packet);
   free (frame);
 }

@@ -124,6 +124,9 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         sctp_push_to_xdp_segs.c
         slab_alloc_64b.c
         slab_free_64b.c
+        xdp_fill.c
+        kpnet_env_init.c
+        sctp_assoc_create.c
 )
 
 add_executable(src ${SOURCES})
