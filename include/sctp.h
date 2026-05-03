@@ -101,14 +101,14 @@ typedef struct sctp_common_hdr
   u16 dstp;
   u32 tag;
   u32 check;
-} sctp_cmn_hdr_t;
+}  __attribute__ ((packed)) sctp_cmn_hdr_t;
 
 typedef struct sctp_fld_hdr
 {
   u8 type;
   u8 flags;
   u16 len;
-} sctp_fld_hdr_t;
+}  __attribute__ ((packed)) sctp_fld_hdr_t;
 
 typedef struct sctp_init_hdr
 {
@@ -117,7 +117,7 @@ typedef struct sctp_init_hdr
   u16 os;
   u16 mis;
   u32 init_tsn;
-} sctp_init_hdr_t;
+}  __attribute__ ((packed)) sctp_init_hdr_t;
 
 typedef struct sctp_data_hdr
 {
@@ -125,7 +125,7 @@ typedef struct sctp_data_hdr
   u16 so;
   u16 sn;
   u32 proto_def;
-} sctp_data_hdr_t;
+}  __attribute__ ((packed)) sctp_data_hdr_t;
 
 typedef struct sctp_init_ack_hdr
 {
@@ -134,21 +134,21 @@ typedef struct sctp_init_ack_hdr
   u16 os;
   u16 mis;
   u32 init_tsn;
-} sctp_init_ack_hdr_t;
+}  __attribute__ ((packed)) sctp_init_ack_hdr_t;
 
 typedef struct sctp_cookie_echo_hdr
 {
   u8 type;
   u8 flags;
   u16 len;
-} sctp_cookie_echo_hdr_t;
+}  __attribute__ ((packed)) sctp_cookie_echo_hdr_t;
 
 typedef struct sctp_cookie_ack_hdr
 {
   u8 type;
   u8 flags;
   u16 len;
-} sctp_cookie_ack_hdr_t;
+}  __attribute__ ((packed)) sctp_cookie_ack_hdr_t;
 
 typedef struct sctp_sack_hdr
 {
@@ -156,12 +156,12 @@ typedef struct sctp_sack_hdr
   u32 a_rwnd;
   u16 gap_acks;
   u16 dup_tsns;
-} sctp_sack_hdr_t;
+}  __attribute__ ((packed)) sctp_sack_hdr_t;
 
 typedef struct sctp_shut_hdr
 {
   u32 cum_tsn;
-} sctp_shut_hdr_t;
+}  __attribute__ ((packed)) sctp_shut_hdr_t;
 
 typedef struct sctp_error_kind
 {
@@ -214,13 +214,13 @@ typedef struct sctp_error
 {
   u16 cause;
   u16 len;
-} sctp_error_t;
+}  __attribute__ ((packed)) sctp_error_t;
 
 typedef struct sctp_parameter
 {
   u16 type;
   u16 len;
-} sctp_parameter_t;
+}  __attribute__ ((packed)) sctp_parameter_t;
 
 typedef struct sctp_parameter sctp_cookie_t;
 
@@ -240,7 +240,7 @@ typedef struct cookie
   /* params */
 
   /* MAC */
-} cookie_t;
+}  __attribute__ ((packed)) cookie_t;
 
 typedef struct if_ip_sctp_meta
 {
@@ -284,7 +284,7 @@ typedef struct sctp_hdr
     sctp_sack_hdr_t sack;
     sctp_shut_hdr_t shut;
   } type;
-} sctp_t;
+}  __attribute__ ((packed)) sctp_t;
 
 typedef struct sctp_ulp_config
 {

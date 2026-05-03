@@ -83,6 +83,14 @@ typedef struct umem_stack
   u32 cap;
 } umem_stack_t;
 
+typedef struct umem_slab_allocator
+{
+  u0 *free_list;
+  umem_stack_t *stack;
+  u8 *cur_pos;
+  u8 *cur_end;
+} umem_slab_allocator_t;
+
 /* Структура для Scatter-Gather передачи */
 typedef struct xdp_sg_req
 {
@@ -103,5 +111,7 @@ u32 xdp_complete_tx (xdp_t *xsk, u64 *addr, u32 max_n);
 umem_stack_t *create_umem_stack (u32 num_chunks, u32 chunk_size);
 u64 umem_stack_pop (umem_stack_t *stack);
 u0 umem_stack_push (umem_stack_t *stack, u64 addr);
+u0 *slab_alloc_64b (umem_slab_allocator_t *alloc, u8 *umem_base);
+u0 slab_free_64b (umem_slab_allocator_t *alloc, u0 *ptr);
 
 #endif //XDP_H

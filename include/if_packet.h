@@ -80,8 +80,14 @@ typedef struct frame_data
 #include <bits/mman-map-flags-generic.h>
 #include <sched.h>
 #include <pthread.h>
+#include <stdalign.h>
+#include "hwinfo.h"
 #include "sctp.h"
 #include "xdp.h"
+
+#ifndef NET_IP_ALIGN
+#define NET_IP_ALIGN 2
+#endif
 
 typedef struct ipv4_hdr {
 #if __BYTE_ORDER__ == __LITTLE_ENDIAN
@@ -104,7 +110,7 @@ typedef struct ipv4_hdr {
   u16 check;
   u32 src_addr;
   u32 dest_addr;
-} ipv4_t;
+}  __attribute__ ((packed)) ipv4_t;
 
 typedef struct connection_args
 {

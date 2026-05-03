@@ -16,4 +16,10 @@
 #define CACHELINE_SIZE 64
 #endif
 
+#ifndef L1_CACHE_BYTES
+#define L1_CACHE_BYTES 64
+#endif
+
+#define KP_ALIGN_CACHE alignas (L1_CACHE_BYTES)
+
 #endif // LIBKPNET_HWINFO_H

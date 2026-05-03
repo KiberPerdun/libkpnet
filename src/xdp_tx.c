@@ -25,8 +25,8 @@ xdp_tx (xdp_t *xsk, u0 **xdp_segs, const u32 *xdp_seg_lens, u32 n)
       idx = (prod + i) & RING_MASK;
 
       xsk->tx_ring[idx].addr = (u64) xdp_segs[i];
-      printf ("%lu", (u64) xdp_segs[i]);
-      puts (" ");
+      //printf ("%lu", (u64) xdp_segs[i]);
+      //puts (" ");
       xsk->tx_ring[idx].len = xdp_seg_lens[i];
 
       if (i < n - 1)

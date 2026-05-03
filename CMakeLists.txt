@@ -6,7 +6,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -march=native -fsanitize=address")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -msse4.2 -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fno-omit-frame-pointer -fno-inline")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstrict-aliasing")
 
 include_directories(
         ${PROJECT_SOURCE_DIR}

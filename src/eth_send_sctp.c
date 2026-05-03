@@ -2,7 +2,6 @@
 // Created by KiberPerdun on 9/26/25.
 //
 
-#include "checks.h"
 #include "if_packet.h"
 
 i64
@@ -19,7 +18,10 @@ eth_send_sctp (sctp_association_t *assoc)
 
 retry:
   if (xdp_tx (assoc->xdp, assoc->xdp_segs, assoc->xdp_seg_lens, assoc->xdp_seg_count) <= 0)
-    goto retry;
+    {
+      _mm_pause ();
+      goto retry;
+    }
 
   /*
   else

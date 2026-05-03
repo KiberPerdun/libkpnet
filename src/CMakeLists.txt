@@ -94,7 +94,7 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         create_ringbuf.c
         push_ringbuf.c
         pop_ringbuf.c
-        eth_send_rb.c
+        eth_send_sctp.c
         build_prefilled_mac_ip_sctp_cookie_echo_hdr.c
         build_prefilled_mac_ip_sctp_init_ack_hdr.c
         sctp_process_sctp_init_ack.c
@@ -122,6 +122,8 @@ set(SOURCES main.c arp_fill_hdr.c arp_fill_eth.c
         umem_stack_push.c
         prefill_sctp_mac_ip.c
         sctp_push_to_xdp_segs.c
+        slab_alloc_64b.c
+        slab_free_64b.c
 )
 
 add_executable(src ${SOURCES})

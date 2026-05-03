@@ -178,17 +178,24 @@ create_client ()
   assoc->stack = stack;
   assoc->umem_hdrs = xdp->umem + assoc->umem_offset;
   assoc->xdp_seg_count = 0;
-  ringbuf_cell_t *cell;
 
-  assoc->prefilled_umem_packet = xdp->umem + umem_stack_pop (stack);
+  umem_slab_allocator_t state_alloc =
+  {
+    .free_list = NULL,
+    .cur_pos = NULL,
+    .cur_end = NULL,
+    .stack = stack
+  };
+
+  assoc->prefilled_umem_packet = slab_alloc_64b (&state_alloc, xdp->umem);
+  if (__builtin_expect (!assoc->prefilled_umem_packet, 0))
+    goto cleanup;
+
   prefill_sctp_mac_ip (assoc, *((u64 *) meta->gateway), *((u64 *) meta->dev));
 
   sctp_init ();
   sctp_prepare_packet (assoc);
-  //assoc->umem_offset = umem_stack_pop (stack);
-  //assoc->umem_hdrs_cursor = assoc->umem_offset;
-  assoc->umem_hdrs = xdp->umem + assoc->prefilled_umem_packet_len;
-  assoc->umem_hdrs_cursor = assoc->umem_hdrs;
+  assoc->umem_hdrs_cursor = slab_alloc_64b (&state_alloc, xdp->umem);;
 
   assoc->status = SCTP_COOKIE_WAIT;
   ringbuf_t *events_allocator = create_allocator (CACHELINE_SIZE, 256);
@@ -235,10 +242,7 @@ create_client ()
         }
     }
 
-  BENCH_START ()
-  build_prefilled_mac_ip_sctp_init_hdr (assoc);
-  BENCH_END ("build_prefilled_mac_ip_sctp_init_hdr", 1)
-
+  /*
   do
     for (; (cell = pop_ringbuf (rb_rx)) == 0;)
       ;
@@ -316,12 +320,12 @@ create_client ()
   // ringbuf_t *allocator_64 = create_allocator (CACHELINE_SIZE, 256);
   assoc->events = events_allocator;
 
-  /*
+
   cell = pop_ringbuf (assoc->prefilled_ring);
   assoc->current_packet = cell->packet;
   assoc->remain_plen = assoc->mtu;
   assoc->cursor = cell->packet + sizeof (mac_t) + sizeof (ipv4_t) + sizeof (sctp_cmn_hdr_t);
-  */
+
   sctp_prepare_packet (assoc);
    for (;;)
     {
@@ -342,6 +346,8 @@ create_client ()
 
   if (pthread_join (prod, NULL) != 0)
     return 0;
+  */
+
 
 cleanup:
   eth_close (eth);
